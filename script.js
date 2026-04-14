@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let clientesAgrupados = []; // Variable global para el CRM
 
     let configBanner = JSON.parse(localStorage.getItem('pelu_config_v2')) || {
-        titulo: "Beauty Palace",
+        titulo: "SALON DE BELLEZA",
         fondo: "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80",
         logo: ""
     };
@@ -232,6 +232,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderizarListaClientes(terminoBusqueda = "") {
+        // Volvemos a leer la configuración para asegurar el nombre actual
+        const configActual = JSON.parse(localStorage.getItem('pelu_config_v2')) || configBanner;
+        
         procesarDatosCRM();
         const lista = document.getElementById('listaClientesActivos');
         if(!lista) return;
@@ -264,11 +267,11 @@ document.addEventListener('DOMContentLoaded', () => {
             let btnWsp = '';
             if (c.telefono) {
                 const telLimpio = c.telefono.replace(/\D/g, ''); 
-                // CORRECCIÓN 1: Mensaje sin "..." y frase completa
-                const mensaje = encodeURIComponent(`¡Hola ${c.nombre}! Nos comunicamos de ${configBanner.titulo}. ¿En qué te podemos ayudar hoy?`);
+                // Mensaje de recordatorio profesional
+                const mensaje = encodeURIComponent(`¡Hola ${c.nombre}! Te escribimos de ${configActual.titulo} para saludarte y recordarte que estamos a tu disposición para tu próximo turno. ¡Te esperamos pronto!`);
                 
-                // CORRECCIÓN 3: Usar la API oficial para evitar mensajes dobles en la PC
-               btnWsp = `<a href="whatsapp://send?phone=${telLimpio}&text=${mensaje}" class="m3-icon-btn" style="background:var(--m3-surface-variant);" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:var(--m3-primary); font-size:20px;">chat</span></a>`;
+                // Sin target="_blank" para que abra la app directo en PC
+                btnWsp = `<a href="whatsapp://send?phone=${telLimpio}&text=${mensaje}" class="m3-icon-btn" style="background:var(--m3-surface-variant);" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:var(--m3-primary); font-size:20px;">chat</span></a>`;
             }
 
             card.innerHTML = `
@@ -330,12 +333,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 7. VISTA HOY ---
     function renderizarVistaHoy() {
+        const configActual = JSON.parse(localStorage.getItem('pelu_config_v2')) || configBanner;
         const strHoy = `${hoyReal.getFullYear()}-${String(hoyReal.getMonth() + 1).padStart(2, '0')}-${String(hoyReal.getDate()).padStart(2, '0')}`;
         fechaSeleccionada = strHoy; 
         const regHoy = registros.filter(r => r.fecha === strHoy);
         
         document.getElementById('fechaHoyDisplay').innerText = strHoy.split('-').reverse().join('/');
         const lista = document.getElementById('listaTurnosHoyVista');
+        
+        if(!lista) return;
+        lista.innerHTML = '';
         
         if(regHoy.length === 0) {
             lista.innerHTML = `<div style="text-align:center; padding: 48px 16px; color: var(--m3-on-surface-variant);">
@@ -345,7 +352,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        lista.innerHTML = '';
         regHoy.sort((a,b) => (a.hora > b.hora ? 1 : -1)).forEach(r => {
             const card = document.createElement('div');
             card.className = 'm3-card-list-item'; 
@@ -357,9 +363,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (r.tipo === 'ingreso' && r.telefono) {
                 const telLimpio = r.telefono.replace(/\D/g, ''); 
                 const nombreCorto = r.titulo.split('-')[0].trim();
-                const mensaje = encodeURIComponent(`¡Hola ${nombreCorto}! Te escribimos de ${configBanner.titulo} para recordarte tu turno de hoy a las ${r.hora}. ¡Te esperamos!`);
+                const mensaje = encodeURIComponent(`¡Hola ${nombreCorto}! Te recordamos tu turno de hoy en ${configActual.titulo} a las ${r.hora}. ¡Te esperamos!`);
                 
-                // CORRECCIÓN 3: Usar API oficial para evitar el error doble de la URL corta en WhatsApp Web
+                // Enlace directo a la aplicación sin pestaña extra
                 btnWsp = `<a href="whatsapp://send?phone=${telLimpio}&text=${mensaje}" class="wsp-btn" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:white; font-size:18px;">chat</span></a>`;
             }
 
@@ -629,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 10. LICENCIA ---
-    const LLAVE_MAESTRA = "BARBER-2026"; 
+    const LLAVE_MAESTRA = "SALON-2026"; 
     function verificarAcceso() {
         const activado = localStorage.getItem('app_activada');
         if (activado !== 'true') {
