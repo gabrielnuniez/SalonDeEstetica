@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mensaje = encodeURIComponent(`¡Hola ${c.nombre}! Nos comunicamos de ${configBanner.titulo}. ¿En qué te podemos ayudar hoy?`);
                 
                 // CORRECCIÓN 3: Usar la API oficial para evitar mensajes dobles en la PC
-                btnWsp = `<a href="https://api.whatsapp.com/send?phone=${telLimpio}&text=${mensaje}" target="_blank" class="m3-icon-btn" style="background:var(--m3-surface-variant);" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:var(--m3-primary); font-size:20px;">chat</span></a>`;
+               btnWsp = `<a href="whatsapp://send?phone=${telLimpio}&text=${mensaje}" class="m3-icon-btn" style="background:var(--m3-surface-variant);" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:var(--m3-primary); font-size:20px;">chat</span></a>`;
             }
 
             card.innerHTML = `
@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mensaje = encodeURIComponent(`¡Hola ${nombreCorto}! Te escribimos de ${configBanner.titulo} para recordarte tu turno de hoy a las ${r.hora}. ¡Te esperamos!`);
                 
                 // CORRECCIÓN 3: Usar API oficial para evitar el error doble de la URL corta en WhatsApp Web
-                btnWsp = `<a href="https://api.whatsapp.com/send?phone=${telLimpio}&text=${mensaje}" target="_blank" class="wsp-btn" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:white; font-size:18px;">chat</span></a>`;
+                btnWsp = `<a href="whatsapp://send?phone=${telLimpio}&text=${mensaje}" class="wsp-btn" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:white; font-size:18px;">chat</span></a>`;
             }
 
             card.innerHTML = `
