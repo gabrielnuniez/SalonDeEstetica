@@ -297,8 +297,13 @@ document.addEventListener('DOMContentLoaded', () => {
         renderizarListaClientes(termino);
     };
 
+    // --- NUEVAS FUNCIONES PARA GESTIÓN DE CLIENTES ---
+    let clienteActualEdicion = null; // Para saber a quién estamos editando
+
     window.abrirModalCliente = (index, arrayBase) => {
         const cliente = arrayBase[index];
+        clienteActualEdicion = cliente; // Guardamos la referencia
+
         document.getElementById('detalleNombreCliente').innerText = cliente.nombre;
         document.getElementById('detalleTelCliente').innerText = cliente.telefono || "Sin teléfono";
         document.getElementById('detalleTotalInvertido').innerText = `$${cliente.totalGastado.toLocaleString()}`;
@@ -327,6 +332,62 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         document.getElementById('modalCliente').style.display = 'flex';
+    };
+
+    // Función para borrar a un cliente y TODA su historia
+    window.eliminarClienteCompleto = () => {
+        if (!clienteActualEdicion) return;
+        
+        const confirmar = confirm(`¿Estás seguro de eliminar a ${clienteActualEdicion.nombre}? Esto borrará todos sus turnos e ingresos históricos.`);
+        
+        if (confirmar) {
+            const claveBorrar = clienteActualEdicion.telefono ? clienteActualEdicion.telefono.replace(/\D/g, '') : clienteActualEdicion.nombre.toLowerCase();
+            
+            // Filtramos los registros para quitar todos los que pertenecen a este cliente
+            registros = registros.filter(r => {
+                let claveReg = r.telefono ? r.telefono.replace(/\D/g, '') : r.titulo.split('-')[0].trim().toLowerCase();
+                return claveReg !== claveBorrar;
+            });
+
+            localStorage.setItem('pelu_datos_v6', JSON.stringify(registros));
+            window.cerrarModalCliente();
+            renderizarListaClientes();
+            renderizar(); // Actualizar calendario también
+            actualizarEconomia();
+            actualizarBannerInfo();
+        }
+    };
+
+    // Función para editar los datos globales del cliente (Nombre y Teléfono)
+    window.abrirEditorCliente = () => {
+        const nuevoNombre = prompt("Editar nombre del cliente:", clienteActualEdicion.nombre);
+        const nuevoTel = prompt("Editar teléfono del cliente:", clienteActualEdicion.telefono);
+
+        if (nuevoNombre !== null && nuevoTel !== null) {
+            const claveVieja = clienteActualEdicion.telefono ? clienteActualEdicion.telefono.replace(/\D/g, '') : clienteActualEdicion.nombre.toLowerCase();
+            
+            // Recorremos todos los turnos y actualizamos los datos
+            registros = registros.map(r => {
+                let claveReg = r.telefono ? r.telefono.replace(/\D/g, '') : r.titulo.split('-')[0].trim().toLowerCase();
+                
+                if (claveReg === claveVieja) {
+                    // Mantenemos el servicio pero cambiamos el nombre en el título
+                    let servicio = r.titulo.includes('-') ? r.titulo.split('-')[1].trim() : "Servicio";
+                    return {
+                        ...r,
+                        titulo: `${nuevoNombre} - ${servicio}`,
+                        telefono: nuevoTel
+                    };
+                }
+                return r;
+            });
+
+            localStorage.setItem('pelu_datos_v6', JSON.stringify(registros));
+            alert("Datos actualizados en todo el historial.");
+            window.cerrarModalCliente();
+            renderizarListaClientes();
+            renderizar();
+        }
     };
 
     window.cerrarModalCliente = () => document.getElementById('modalCliente').style.display = 'none';
@@ -422,17 +483,55 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.abrirModalDia = (fecha) => {
+        // Leemos la configuración para sacar el nombre del local actualizado
+        const configActual = JSON.parse(localStorage.getItem('pelu_config_v2')) || configBanner;
+        
         fechaSeleccionada = fecha;
         const regDia = registros.filter(r => r.fecha === fecha);
-        document.getElementById('fechaDiaTitulo').innerText = fecha.split('-').reverse().join('/');
+        
+        // Formateamos la fecha (Ej: 14/04/2026)
+        const fechaFormateada = fecha.split('-').reverse().join('/');
+        document.getElementById('fechaDiaTitulo').innerText = fechaFormateada;
+        
         const lista = document.getElementById('listaTurnosDia');
         lista.innerHTML = regDia.length ? '' : '<p style="text-align:center; color: var(--m3-on-surface-variant); padding:20px;">Sin registros</p>';
         
-        regDia.forEach(r => {
+        // Ordenamos los turnos por hora
+        regDia.sort((a,b) => ((a.hora || '00:00') > (b.hora || '00:00') ? 1 : -1)).forEach(r => {
             const item = document.createElement('div');
             item.className = 'm3-card-list-item';
             item.style.marginBottom = '8px';
-            item.innerHTML = `<div class="m3-item-content"><span class="m3-item-title">${r.titulo}</span></div><span class="m3-item-amount ${r.tipo === 'gasto' ? 'text-error' : 'text-success'}">$${r.monto}</span>`;
+            
+            const colorMonto = r.tipo === 'gasto' ? 'text-error' : 'text-success';
+            
+            let btnWsp = '';
+            // Si es un gasto, ponemos la palabra "Gasto", sino mostramos la hora
+            let subtitle = r.tipo === 'gasto' ? 'Gasto' : (r.hora || '--:--');
+
+            if (r.tipo === 'ingreso' && r.telefono) {
+                const telLimpio = r.telefono.replace(/\D/g, ''); 
+                const nombreCorto = r.titulo.split('-')[0].trim();
+                
+                // Mensaje armado específicamente con el día y la hora de ESTE turno
+                const mensaje = encodeURIComponent(`¡Hola ${nombreCorto}! Te escribimos de ${configActual.titulo} para recordarte tu turno el día ${fechaFormateada} a las ${r.hora || '--:--'}. ¡Te esperamos!`);
+                
+                // Botón con el estilo de la vista "Hoy" y el enlace de PC
+                btnWsp = `<a href="whatsapp://send?phone=${telLimpio}&text=${mensaje}" class="wsp-btn" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:white; font-size:18px;">chat</span></a>`;
+            }
+
+            // Armamos la tarjeta manteniendo la estética iOS que pusimos en el CSS
+            item.innerHTML = `
+                <div class="m3-item-content">
+                    <span class="m3-item-title">${r.titulo}</span>
+                    <span class="m3-item-subtitle">${subtitle}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    ${btnWsp}
+                    <span class="m3-item-amount ${colorMonto}">$${r.monto}</span>
+                </div>
+            `;
+            
+            // Si hacen clic en la tarjeta, se abre para editar
             item.onclick = (e) => { e.stopPropagation(); window.prepararEdicion(registros.indexOf(r)); };
             lista.appendChild(item);
         });

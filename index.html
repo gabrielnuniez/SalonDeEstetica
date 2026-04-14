@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <link rel="stylesheet" href="style.css?v=8.6">
+    <link rel="stylesheet" href="style.css?v=8.7">
     <link rel="manifest" href="manifest.json">
     
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -320,34 +320,50 @@
     </div>
 
     <div id="modalCliente" class="m3-bottom-sheet">
-        <div class="m3-sheet-surface">
-            <div class="m3-drag-handle"></div>
-            <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
-                <div class="m3-avatar" style="width:64px; height:64px;"><span class="material-symbols-rounded" style="font-size:32px;">person</span></div>
-                <div>
-                    <h2 id="detalleNombreCliente" class="m3-headline-small" style="margin:0;">--</h2>
-                    <span id="detalleTelCliente" class="m3-body-medium text-variant">--</span>
-                </div>
+    <div class="m3-sheet-surface">
+        <div class="m3-drag-handle"></div>
+        
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+            <div class="m3-avatar" style="width:64px; height:64px;">
+                <span class="material-symbols-rounded" style="font-size:32px;">person</span>
             </div>
-            
-            <div class="quick-grid" style="padding:0; margin-bottom:24px;">
-                <div class="m3-card m3-stat-card">
-                    <span class="m3-label">Total Invertido</span>
-                    <span id="detalleTotalInvertido" class="m3-value text-success">$0</span>
-                </div>
-                <div class="m3-card m3-stat-card">
-                    <span class="m3-label">Último Servicio</span>
-                    <span id="detalleUltimaVisita" class="m3-value" style="font-size: 14px;">--</span>
-                </div>
+            <div style="flex-grow: 1;">
+                <h2 id="detalleNombreCliente" class="m3-headline-small" style="margin:0;">--</h2>
+                <span id="detalleTelCliente" class="m3-body-medium text-variant">--</span>
             </div>
-
-            <h3 class="m3-title-medium" style="margin-bottom:12px;">Historial de Turnos</h3>
-            <div id="listaHistorialCliente" class="m3-list-container scroll-area" style="max-height: 200px;"></div>
-            
-            <button class="m3-btn-text" style="width: 100%; margin-top:16px;" onclick="window.cerrarModalCliente()">CERRAR HISTORIAL</button>
+            <button class="m3-icon-btn" onclick="cerrarModalCliente()">
+                <span class="material-symbols-rounded">close</span>
+            </button>
         </div>
-        <div class="m3-scrim" onclick="window.cerrarModalCliente()"></div>
+
+        <div style="display:flex; gap:12px; margin-bottom:24px;">
+            <button class="m3-btn-outlined" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="abrirEditorCliente()">
+                <span class="material-symbols-rounded" style="font-size:20px;">edit</span>
+                Editar
+            </button>
+            <button class="m3-btn-text text-error" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="eliminarClienteCompleto()">
+                <span class="material-symbols-rounded" style="font-size:20px;">delete_outline</span>
+                Eliminar
+            </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:24px;">
+            <div class="m3-card" style="padding:16px; background:var(--m3-surface-variant); box-shadow:none;">
+                <span class="m3-label-small">Inversión Total</span>
+                <div id="detalleTotalInvertido" class="m3-title-large" style="color:var(--m3-success);">$0</div>
+            </div>
+            <div class="m3-card" style="padding:16px; background:var(--m3-surface-variant); box-shadow:none;">
+                <span class="m3-label-small">Última Visita</span>
+                <div id="detalleUltimaVisita" class="m3-title-large" style="font-size:16px;">--/--/--</div>
+            </div>
+        </div>
+
+        <h3 class="m3-title-medium" style="margin-bottom:12px; padding-left:4px;">Historial de Servicios</h3>
+        <div id="listaHistorialCliente" style="max-height: 300px; overflow-y: auto; padding-bottom: 20px;">
+            </div>
     </div>
+    <div class="m3-scrim" onclick="cerrarModalCliente()"></div>
+</div>
 
     <script src="script.js?v=8.1"></script>
 </body>
