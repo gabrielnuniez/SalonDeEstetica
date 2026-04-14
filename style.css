@@ -1,0 +1,387 @@
+/* --- SISTEMA DE COLORES MATERIAL DESIGN 3 (SALÓN DE BELLEZA) --- */
+:root {
+    /* Paleta Dinámica Azules/Celestes M3 */
+    --m3-primary: #0061A4;
+    --m3-on-primary: #FFFFFF;
+    --m3-primary-container: #D1E4FF;
+    --m3-on-primary-container: #001D36;
+    
+    --m3-secondary: #535F70;
+    --m3-on-secondary: #FFFFFF;
+    --m3-secondary-container: #D7E3F7;
+    --m3-on-secondary-container: #101C2B;
+    
+    --m3-surface: #F8F9FF; /* Fondo general */
+    --m3-on-surface: #191C20;
+    --m3-surface-variant: #DFE2EB;
+    --m3-on-surface-variant: #43474E;
+    
+    --m3-outline: #73777F;
+    --m3-error: #BA1A1A;
+    --m3-on-error: #FFFFFF;
+    
+    /* Variables de UI M3 */
+    --m3-radius-xl: 28px;
+    --m3-radius-l: 16px;
+    --transition-m3: 300ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* --- ESTILOS GENERALES --- */
+body {
+    background-color: var(--m3-surface);
+    color: var(--m3-on-surface);
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    display: flex;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* --- LAYOUT ADAPTATIVO (ESCRITORIO / MÓVIL) --- */
+.m3-app-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding-bottom: 80px; /* Espacio para Bottom Bar */
+}
+
+/* Menú Lateral (PC) */
+.m3-nav-rail {
+    display: none; /* Oculto en móvil */
+    width: 80px;
+    background-color: var(--m3-surface);
+    border-right: 1px solid var(--m3-surface-variant);
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0;
+    position: fixed;
+    height: 100vh;
+    z-index: 100;
+}
+
+.rail-logo span { font-size: 32px; color: var(--m3-primary); margin-bottom: 32px; }
+.rail-items { flex-grow: 1; display: flex; flex-direction: column; gap: 16px; width: 100%; }
+.rail-settings { margin-bottom: 16px; }
+
+/* Barra Inferior (Móvil) */
+.m3-navigation-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background-color: #EEF0F6;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+}
+
+/* Media Query para Pantallas Grandes (PC) */
+@media (min-width: 840px) {
+    .m3-nav-rail { display: flex; }
+    .m3-app-container { padding-left: 80px; padding-bottom: 0; }
+    .m3-navigation-bar { display: none; }
+    .mobile-only { display: none !important; }
+}
+
+/* --- COMPONENTES DE NAVEGACIÓN --- */
+.m3-nav-item, .rail-item {
+    background: transparent;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--m3-on-surface-variant);
+    width: 100%;
+    padding: 8px 0;
+}
+
+.m3-nav-icon-wrapper {
+    width: 64px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    transition: var(--transition-m3);
+}
+
+.active .m3-nav-icon-wrapper {
+    background-color: var(--m3-primary-container);
+    color: var(--m3-on-primary-container);
+}
+.active span:last-child { font-weight: 700; color: var(--m3-on-surface); }
+.m3-nav-item span:last-child { font-size: 12px; }
+
+/* --- APP BAR (HEADER) --- */
+.m3-top-app-bar {
+    padding: 16px 24px;
+    background-color: var(--m3-surface);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.m3-app-bar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.m3-user-info { display: flex; align-items: center; gap: 16px; }
+.m3-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+}
+.m3-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.m3-title-large { font-size: 22px; margin: 0; font-weight: 400; }
+.m3-label-small { font-size: 11px; color: var(--m3-primary); font-weight: 700; text-transform: uppercase; }
+
+.m3-app-bar-actions { display: flex; align-items: center; gap: 16px; }
+.m3-badge-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 14px; font-weight: 500;
+}
+
+/* --- VISTAS GLOBALES --- */
+.m3-main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.vista { display: none; animation: fadeIn 0.3s ease; }
+.vista.activa { display: block; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.m3-section-header { padding: 24px 24px 16px; display: flex; justify-content: space-between; align-items: center; }
+.m3-headline-medium { font-size: 28px; margin: 0; font-weight: 400; }
+
+/* --- BUSCADOR (CRM M3) --- */
+.m3-search-bar {
+    display: flex;
+    align-items: center;
+    background-color: #EEF0F6;
+    border-radius: 100px;
+    padding: 12px 20px;
+    gap: 12px;
+    transition: background-color 0.2s;
+}
+.m3-search-bar:focus-within {
+    background-color: var(--m3-surface-variant);
+}
+.m3-search-bar span {
+    color: var(--m3-on-surface-variant);
+}
+.m3-search-bar input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 16px;
+    width: 100%;
+    color: var(--m3-on-surface);
+}
+
+/* --- VISTA HOME (HERO SECTION) --- */
+.m3-hero-section {
+    position: relative;
+    margin: 16px;
+    border-radius: var(--m3-radius-xl);
+    overflow: hidden;
+    height: 300px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.hero-image {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-size: cover; background-position: center;
+    z-index: 1;
+}
+
+.hero-content {
+    position: relative; z-index: 2;
+    padding: 32px; width: 100%;
+    background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+    color: white;
+}
+
+.m3-headline-large { font-size: 32px; margin: 0 0 8px 0; font-weight: 400; }
+.m3-body-large { font-size: 16px; margin: 0 0 24px 0; opacity: 0.9; }
+
+.m3-btn-fab-extended {
+    background-color: var(--m3-primary-container);
+    color: var(--m3-on-primary-container);
+    border: none; padding: 16px 24px;
+    border-radius: 16px; font-weight: 500; font-size: 14px;
+    display: inline-flex; align-items: center; gap: 12px;
+    cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
+
+/* --- VISTA SERVICIOS (GRID) --- */
+.m3-services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 0 16px 24px;
+}
+
+.m3-service-card {
+    display: flex; flex-direction: column; align-items: flex-start;
+}
+.service-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background-color: var(--m3-secondary-container);
+    color: var(--m3-on-secondary-container);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+}
+.m3-service-card h3 { margin: 0 0 8px 0; }
+.m3-service-card p { margin: 0 0 24px 0; flex-grow: 1; }
+
+/* --- TARJETAS M3 (GENERAL) --- */
+.m3-card {
+    background-color: #FFFFFF;
+    border-radius: var(--m3-radius-xl);
+    padding: 24px;
+    border: 1px solid var(--m3-surface-variant);
+}
+
+.m3-card-interactive {
+    display: flex; align-items: center; gap: 12px;
+    padding: 20px; cursor: pointer;
+    font-weight: 500; transition: background-color 0.2s;
+}
+.m3-card-interactive:active { background-color: var(--m3-surface-variant); }
+
+/* --- LISTAS M3 (VISTA HOY & CLIENTES) --- */
+.m3-list-container { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
+.m3-card-list-item {
+    background: #FFFFFF; border-radius: var(--m3-radius-l);
+    padding: 16px; display: flex; align-items: center; gap: 16px;
+    border: 1px solid var(--m3-surface-variant); cursor: pointer;
+}
+.m3-item-leading {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--m3-surface-variant); display: flex; align-items: center; justify-content: center;
+}
+.m3-item-content { flex-grow: 1; display: flex; flex-direction: column; }
+.m3-item-title { font-size: 16px; font-weight: 500; }
+.m3-item-subtitle { font-size: 14px; color: var(--m3-on-surface-variant); }
+.m3-item-amount { font-size: 18px; font-weight: 700; }
+
+/* --- CALENDARIO Y SKELETON --- */
+.m3-view-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; }
+.m3-month-selector { display: flex; align-items: center; gap: 16px; }
+.m3-month-selector h2 { margin: 0; font-size: 20px; font-weight: 500; text-transform: capitalize; }
+.m3-calendar-card { margin: 0 16px; padding: 12px; }
+
+.weekdays-grid-m3 { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; color: var(--m3-primary); font-weight: 700; margin-bottom: 8px; }
+#calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.day { aspect-ratio: 1/1; background-color: var(--m3-surface); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; font-size: 14px; cursor: pointer; padding-top: 4px; overflow: hidden; }
+.day.today { background-color: var(--m3-primary); color: white; font-weight: 700; }
+
+.day-events { width: 100%; display: flex; flex-direction: column; gap: 2px; align-items: center; margin-top: 2px; }
+.event-indicator { width: 6px; height: 6px; border-radius: 50%; }
+.event-ingreso { background-color: #146C2E; }
+.event-gasto { background-color: var(--m3-error); }
+
+.m3-skeleton-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 16px; }
+.skeleton-day { aspect-ratio: 1/1; background: linear-gradient(90deg, #EDF1F9 25%, #D7E3F7 50%, #EDF1F9 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; border-radius: 12px; }
+@keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* --- BOTONES Y FORMS --- */
+.m3-btn-filled { background-color: var(--m3-primary); color: white; border: none; padding: 12px 24px; border-radius: 100px; font-weight: 500; cursor: pointer; }
+.m3-btn-text { background: transparent; color: var(--m3-primary); border: none; padding: 10px 16px; font-weight: 500; cursor: pointer; }
+.m3-btn-text.text-error { color: var(--m3-error); }
+.m3-icon-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: transparent; color: var(--m3-on-surface); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+.m3-textfield { position: relative; width: 100%; margin-bottom: 16px; }
+.m3-textfield input { width: 100%; padding: 24px 16px 8px; border: none; border-bottom: 1px solid var(--m3-outline); background-color: var(--m3-surface-variant); border-radius: 4px 4px 0 0; font-size: 16px; box-sizing: border-box; }
+.m3-textfield label { position: absolute; left: 16px; top: 16px; color: var(--m3-on-surface-variant); pointer-events: none; transition: 0.2s; }
+.m3-textfield input:focus ~ label, .m3-textfield input:not(:placeholder-shown) ~ label { top: 6px; font-size: 12px; color: var(--m3-primary); }
+
+/* SELECTOR M3 */
+.m3-select {
+    width: 100%;
+    padding: 16px;
+    border-radius: 4px 4px 0 0;
+    border: none;
+    border-bottom: 1px solid var(--m3-outline);
+    background-color: var(--m3-surface-variant);
+    font-size: 16px;
+    color: var(--m3-on-surface);
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2343474E'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+.m3-select:focus {
+    outline: none;
+    border-bottom: 2px solid var(--m3-primary);
+}
+
+.m3-file-picker { margin-bottom: 16px; }
+.m3-btn-outlined { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: 1px solid var(--m3-outline); border-radius: 100px; color: var(--m3-primary); cursor: pointer; }
+
+/* --- MODALES Y OVERLAYS --- */
+.m3-dialog, .m3-bottom-sheet, .m3-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; z-index: 2000; justify-content: center; }
+.m3-dialog { align-items: center; }
+.m3-bottom-sheet { align-items: flex-end; }
+.m3-overlay { display: none; align-items: center; background: var(--m3-surface); }
+
+.m3-scrim { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1; }
+
+.m3-dialog-surface { background: #fff; width: 90%; max-width: 400px; border-radius: var(--m3-radius-xl); padding: 24px; position: relative; z-index: 2; box-shadow: 0 4px 24px rgba(0,0,0,0.2); }
+.m3-sheet-surface { background: #fff; width: 100%; border-radius: var(--m3-radius-xl) var(--m3-radius-xl) 0 0; padding: 16px 24px 32px; position: relative; z-index: 2; }
+
+.m3-dialog-title { margin: 0 0 16px; font-weight: 400; font-size: 24px; }
+.m3-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+.m3-drag-handle { width: 32px; height: 4px; background: var(--m3-on-surface-variant); opacity: 0.4; border-radius: 2px; margin: 0 auto 16px; }
+
+/* Efectos de Radio y Chip */
+.tipo-selector { display: flex; gap: 8px; margin-bottom: 8px; }
+.md-radio { position: relative; cursor: pointer; }
+.md-radio input { display: none; }
+.radio-chip { display: flex; align-items: center; gap: 4px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--m3-on-surface-variant); color: var(--m3-on-surface-variant); font-size: 14px; transition: all 0.2s; }
+.md-radio input:checked + .radio-chip.ingreso { background: rgba(129, 199, 132, 0.2); border-color: #146C2E; color: #146C2E; }
+.md-radio input:checked + .radio-chip.gasto { background: rgba(255, 180, 171, 0.2); border-color: var(--m3-error); color: var(--m3-error); }
+
+/* Efecto Ripple */
+.m3-ripple { position: absolute; border-radius: 50%; transform: scale(0); animation: ripple-anim 600ms linear; background-color: rgba(255, 255, 255, 0.3); pointer-events: none;}
+@keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
+
+/* Botón WSP */
+.wsp-btn { background-color: #25D366; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; }
+
+/* Utils */
+.text-success { color: #146C2E; }
+.text-error { color: var(--m3-error); }
+.text-primary { color: var(--m3-primary); }
+.text-variant { color: var(--m3-on-surface-variant); }

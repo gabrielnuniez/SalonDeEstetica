@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Salón Beauty Palace - App</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <link rel="stylesheet" href="style.css?v=8.1">
+    <link rel="manifest" href="manifest.json">
+    
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#F8F9FF">
+</head>
+<body class="m3-dynamic-theme">
+
+    <div id="bloqueoLicencia" class="m3-overlay">
+        <div class="m3-lock-card">
+            <span class="material-symbols-rounded m3-icon-large">lock</span>
+            <h2>Activación Requerida</h2>
+            <p>Ingresá tu licencia comercial para este terminal.</p>
+            <div class="m3-textfield">
+                <input type="text" id="inputLicencia" placeholder=" " autocomplete="off">
+                <label>Código de Licencia</label>
+            </div>
+            <button class="m3-btn-filled" onclick="window.validarLicencia()">Activar Dispositivo</button>
+            <p id="errorLicencia" class="m3-error-text">Licencia no válida</p>
+        </div>
+    </div>
+
+    <aside class="m3-nav-rail">
+        <div class="rail-logo">
+            <span class="material-symbols-rounded">content_cut</span>
+        </div>
+        <div class="rail-items">
+            <button class="rail-item active" onclick="window.cambiarVista('home')">
+                <span class="material-symbols-rounded">home</span>
+                <span>Inicio</span>
+            </button>
+            <button class="rail-item" onclick="window.cambiarVista('calendario')">
+                <span class="material-symbols-rounded">calendar_month</span>
+                <span>Agenda</span>
+            </button>
+            <button class="rail-item" onclick="window.cambiarVista('clientes')">
+                <span class="material-symbols-rounded">person_search</span>
+                <span>Clientes</span>
+            </button>
+            <button class="rail-item" onclick="window.cambiarVista('reportes')">
+                <span class="material-symbols-rounded">analytics</span>
+                <span>Resumen</span>
+            </button>
+        </div>
+        <button class="m3-icon-btn rail-settings" onclick="window.abrirConfig()">
+            <span class="material-symbols-rounded">settings</span>
+        </button>
+    </aside>
+
+    <div class="m3-app-container">
+        
+        <header class="m3-top-app-bar">
+            <div class="m3-app-bar-content">
+                <div class="m3-user-info">
+                    <div class="m3-avatar" id="perfilDisplay">
+                        <span class="material-symbols-rounded">account_circle</span>
+                    </div>
+                    <div>
+                        <span class="m3-label-small" id="saludoText">¡Hola!</span>
+                        <h1 id="txtBannerDisplay" class="m3-title-large">Beauty Palace</h1>
+                    </div>
+                </div>
+                <div class="m3-app-bar-actions">
+                    <div id="contadorTurnos" class="m3-badge-pill" onclick="window.cambiarVista('hoy')" style="cursor:pointer;">
+                        <span class="material-symbols-rounded">notifications</span>
+                        <span>0 Turnos</span>
+                    </div>
+                    <button class="m3-icon-btn mobile-only" onclick="window.abrirConfig()">
+                        <span class="material-symbols-rounded">settings</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main id="app-content" class="m3-main-content">
+            
+            <section id="vista-home" class="vista activa">
+                <div class="m3-hero-section">
+                    <div class="hero-image" id="bannerBg"></div>
+                    <div class="hero-content">
+                        <h2 class="m3-headline-large">Transformá tu estilo hoy</h2>
+                        <p class="m3-body-large">Reserva tu momento de cuidado personal en un solo paso.</p>
+                        <button class="m3-btn-fab-extended" onclick="window.abrirFormularioNuevo(false)">
+                            <span class="material-symbols-rounded">calendar_add_on</span>
+                            AGENDAR CITA
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="m3-quick-actions">
+                    <h3 class="m3-title-medium" style="padding: 0 16px;">Accesos Rápidos</h3>
+                    <div class="quick-grid">
+                        <div class="m3-card m3-card-interactive" onclick="window.cambiarVista('clientes')">
+                            <span class="material-symbols-rounded">group</span>
+                            <span>Directorio Clientes</span>
+                        </div>
+                        <div class="m3-card m3-card-interactive" onclick="window.cambiarVista('hoy')">
+                            <span class="material-symbols-rounded">today</span>
+                            <span>Turnos de Hoy</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="vista-calendario" class="vista oculta">
+                <div class="m3-view-header">
+                    <div class="m3-month-selector">
+                        <button id="prevMonth" class="m3-icon-btn"><span class="material-symbols-rounded">chevron_left</span></button>
+                        <h2 id="monthYear">--</h2>
+                        <button id="nextMonth" class="m3-icon-btn"><span class="material-symbols-rounded">chevron_right</span></button>
+                    </div>
+                    <div class="date-pill m3-surface-variant" id="fechaBannerDisplay">--/--/----</div>
+                </div>
+
+                <div id="calendar-skeleton" class="m3-skeleton-grid" style="display:none;">
+                    <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+                    <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+                    <div class="skeleton-day"></div>
+                </div>
+
+                <div id="calendar-container" class="m3-card m3-calendar-card">
+                    <div class="weekdays-grid-m3">
+                        <div>dom</div><div>lun</div><div>mar</div><div>mié</div><div>jue</div><div>vie</div><div>sáb</div>
+                    </div>
+                    <div id="calendar"></div>
+                </div>
+            </section>
+
+            <section id="vista-clientes" class="vista oculta">
+                <header class="m3-section-header" style="flex-direction: column; align-items: stretch; gap: 16px;">
+                    <h2 class="m3-headline-medium">Directorio de Clientes</h2>
+                    <div class="m3-search-bar">
+                        <span class="material-symbols-rounded">search</span>
+                        <input type="text" id="buscadorClientes" placeholder="Buscar por nombre o teléfono..." oninput="buscarCliente()">
+                    </div>
+                </header>
+                <div id="listaClientesActivos" class="m3-list-container">
+                    </div>
+            </section>
+
+            <section id="vista-hoy" class="vista oculta">
+                <header class="m3-section-header">
+                    <h2 class="m3-headline-medium">Agenda del Día</h2>
+                    <span id="fechaHoyDisplay" class="m3-label-large text-primary">--/--/----</span>
+                </header>
+                <div id="listaTurnosHoyVista" class="m3-list-container"></div>
+            </section>
+
+            <section id="vista-reportes" class="vista oculta">
+                <header class="m3-section-header">
+                    <h2 class="m3-headline-medium">Análisis Financiero</h2>
+                </header>
+                <div class="m3-grid-layout">
+                    <div class="quick-grid" style="padding: 0 16px; margin-bottom: 24px;">
+                        <div class="m3-card m3-stat-card">
+                            <span class="m3-label">Ingresos del Mes</span>
+                            <span id="totalIngresos" class="m3-value text-success">$0</span>
+                        </div>
+                        <div class="m3-card m3-stat-card">
+                            <span class="m3-label">Gastos del Mes</span>
+                            <span id="totalGastos" class="m3-value text-error">$0</span>
+                        </div>
+                    </div>
+
+                    <div class="m3-card m3-chart-card">
+                        <div class="m3-filter-chips">
+                            <button class="m3-chip active" onclick="filtrarGrafico('diario')">Día</button>
+                            <button class="m3-chip" onclick="filtrarGrafico('mensual')">Mes</button>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="graficoBalance"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <nav class="m3-navigation-bar">
+            <button class="m3-nav-item active" onclick="window.cambiarVista('home')">
+                <div class="m3-nav-icon-wrapper"><span class="material-symbols-rounded">home</span></div>
+                <span>Inicio</span>
+            </button>
+            <button class="m3-nav-item" onclick="window.cambiarVista('calendario')">
+                <div class="m3-nav-icon-wrapper"><span class="material-symbols-rounded">calendar_month</span></div>
+                <span>Agenda</span>
+            </button>
+            <button class="m3-nav-item" onclick="window.cambiarVista('clientes')">
+                <div class="m3-nav-icon-wrapper"><span class="material-symbols-rounded">person_search</span></div>
+                <span>Clientes</span>
+            </button>
+            <button class="m3-nav-item" onclick="window.cambiarVista('reportes')">
+                <div class="m3-nav-icon-wrapper"><span class="material-symbols-rounded">analytics</span></div>
+                <span>Resumen</span>
+            </button>
+        </nav>
+        
+    </div>
+
+    <div id="modalConfig" class="m3-dialog">
+        <div class="m3-dialog-surface">
+            <h2 class="m3-dialog-title">Ajustes</h2>
+            <div class="m3-dialog-content">
+                <div class="m3-textfield">
+                    <input type="text" id="cfgTitulo" required placeholder=" ">
+                    <label>Nombre del Salón</label>
+                </div>
+                <div class="m3-file-picker">
+                    <label for="cfgFondoFile" class="m3-btn-outlined">
+                        <span class="material-symbols-rounded">photo_camera</span> Imagen Hero
+                    </label>
+                    <input type="file" id="cfgFondoFile" accept="image/*" hidden>
+                </div>
+                <div class="m3-file-picker">
+                    <label for="cfgLogoFile" class="m3-btn-outlined">
+                        <span class="material-symbols-rounded">account_circle</span> Logo
+                    </label>
+                    <input type="file" id="cfgLogoFile" accept="image/*" hidden>
+                </div>
+            </div>
+            <div class="m3-dialog-actions">
+                <button class="m3-btn-text" onclick="window.cerrarConfig()">Cerrar</button>
+                <button class="m3-btn-filled" onclick="window.guardarConfig()">Aplicar</button>
+            </div>
+        </div>
+        <div class="m3-scrim" onclick="window.cerrarConfig()"></div>
+    </div>
+
+    <div id="modalDia" class="m3-bottom-sheet">
+        <div class="m3-sheet-surface">
+            <div class="m3-drag-handle"></div>
+            <h2 id="fechaDiaTitulo" class="m3-headline-small" style="margin: 0 0 16px;">--/--/----</h2>
+            <button class="m3-btn-filled" style="width: 100%; margin-bottom: 16px;" onclick="window.abrirFormularioNuevo(true)">
+                <span class="material-symbols-rounded">add</span> AGREGAR CITA
+            </button>
+            <div id="listaTurnosDia" class="m3-list-container scroll-area"></div>
+            <button class="m3-btn-text" style="width: 100%;" onclick="window.cerrarModalDia()">CERRAR</button>
+        </div>
+        <div class="m3-scrim" onclick="window.cerrarModalDia()"></div>
+    </div>
+
+    <div id="modalTurno" class="m3-dialog">
+        <div class="m3-dialog-surface" style="max-height: 90vh; overflow-y: auto;">
+            <h2 id="modalTitle" class="m3-dialog-title">Nueva Cita</h2>
+            <div class="m3-dialog-content">
+                <div class="tipo-selector" style="display:flex; gap:8px; margin-bottom:16px;">
+                    <label class="md-radio">
+                        <input type="radio" name="tipoRegistro" value="ingreso" checked onchange="toggleFormularioTipo()">
+                        <span class="radio-chip ingreso"><span class="material-symbols-rounded">content_cut</span> Servicio</span>
+                    </label>
+                    <label class="md-radio">
+                        <input type="radio" name="tipoRegistro" value="gasto" onchange="toggleFormularioTipo()">
+                        <span class="radio-chip gasto"><span class="material-symbols-rounded">shopping_cart</span> Gasto</span>
+                    </label>
+                </div>
+
+                <div class="m3-textfield">
+                    <input type="text" id="nombreCliente" required placeholder=" " autocomplete="off">
+                    <label>Nombre del Cliente / Concepto</label>
+                </div>
+                
+                <div class="m3-textfield" id="campoTelefono">
+                    <input type="tel" id="telefonoCliente" placeholder=" " autocomplete="off">
+                    <label>Teléfono (WhatsApp)</label>
+                </div>
+
+                <div id="campoServicios" style="margin-bottom: 16px;">
+                    <span class="m3-label-small" style="display:block; margin-bottom:8px; color:var(--m3-on-surface-variant);">SELECCIONÁ EL SERVICIO:</span>
+                    <select id="selectServicio" class="m3-select" onchange="actualizarMontoSugerido()">
+                        <option value="">Servicio Personalizado...</option>
+                        <option value="Color de raíz">Color de raíz</option>
+                        <option value="Color completo">Color completo</option>
+                        <option value="Corte femenino">Corte femenino</option>
+                        <option value="Corte masculino">Corte masculino</option>
+                        <option value="Nutrición">Nutrición</option>
+                        <option value="Alisado pelo corto">Alisado pelo corto</option>
+                        <option value="Alisado pelo largo">Alisado pelo largo</option>
+                        <option value="Claritos Hombre">Claritos Hombre</option>
+                        <option value="Claritos Mujer">Claritos Mujer</option>
+                        <option value="Balayage">Balayage</option>
+                        <option value="Botox">Botox</option>
+                        <option value="Keratina">Keratina</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap:16px;">
+                    <div class="m3-textfield" id="campoHora" style="flex:1;">
+                        <input type="time" id="horaTurno" required>
+                    </div>
+                    <div class="m3-textfield" style="flex:1;">
+                        <input type="number" id="montoTurno" required placeholder=" ">
+                        <label>Monto ($)</label>
+                    </div>
+                </div>
+            </div>
+            <div class="m3-dialog-actions" style="justify-content: space-between;">
+                <button class="m3-btn-text text-error" id="btnBorrar" style="display:none;">ELIMINAR</button>
+                <div style="display:flex; gap:8px;">
+                    <button class="m3-btn-text" onclick="window.cerrarModal()">CANCELAR</button>
+                    <button class="m3-btn-filled" id="btnGuardar">GUARDAR</button>
+                </div>
+            </div>
+        </div>
+        <div class="m3-scrim" onclick="window.cerrarModal()"></div>
+    </div>
+
+    <div id="modalCliente" class="m3-bottom-sheet">
+        <div class="m3-sheet-surface">
+            <div class="m3-drag-handle"></div>
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+                <div class="m3-avatar" style="width:64px; height:64px;"><span class="material-symbols-rounded" style="font-size:32px;">person</span></div>
+                <div>
+                    <h2 id="detalleNombreCliente" class="m3-headline-small" style="margin:0;">--</h2>
+                    <span id="detalleTelCliente" class="m3-body-medium text-variant">--</span>
+                </div>
+            </div>
+            
+            <div class="quick-grid" style="padding:0; margin-bottom:24px;">
+                <div class="m3-card m3-stat-card">
+                    <span class="m3-label">Total Invertido</span>
+                    <span id="detalleTotalInvertido" class="m3-value text-success">$0</span>
+                </div>
+                <div class="m3-card m3-stat-card">
+                    <span class="m3-label">Último Servicio</span>
+                    <span id="detalleUltimaVisita" class="m3-value" style="font-size: 14px;">--</span>
+                </div>
+            </div>
+
+            <h3 class="m3-title-medium" style="margin-bottom:12px;">Historial de Turnos</h3>
+            <div id="listaHistorialCliente" class="m3-list-container scroll-area" style="max-height: 200px;"></div>
+            
+            <button class="m3-btn-text" style="width: 100%; margin-top:16px;" onclick="window.cerrarModalCliente()">CERRAR HISTORIAL</button>
+        </div>
+        <div class="m3-scrim" onclick="window.cerrarModalCliente()"></div>
+    </div>
+
+    <script src="script.js?v=8.1"></script>
+</body>
+</html>
