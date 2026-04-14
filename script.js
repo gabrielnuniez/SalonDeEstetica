@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let fechaSeleccionada = "";
     let indiceEdicion = -1;
     let chartInstance = null;
-    let clientesAgrupados = []; 
+    let clientesAgrupados = []; // Variable global para el CRM
 
     let configBanner = JSON.parse(localStorage.getItem('pelu_config_v2')) || {
         titulo: "Beauty Palace",
@@ -139,11 +139,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 contenedor.appendChild(diaDiv);
             }
             actualizarEconomia();
-            renderizarListaClientes(); 
+            renderizarListaClientes(); // Actualiza el CRM en segundo plano
         }, 400); 
     };
 
     // --- 4. SWIPE Y MESES ---
+    let touchStartX = 0;
+    let touchStartY = 0;
+
     contenedor.addEventListener('touchstart', e => { 
         touchStartX = e.changedTouches[0].screenX; 
         touchStartY = e.changedTouches[0].screenY;
@@ -261,10 +264,11 @@ document.addEventListener('DOMContentLoaded', () => {
             let btnWsp = '';
             if (c.telefono) {
                 const telLimpio = c.telefono.replace(/\D/g, ''); 
-                // Mensaje genérico para escribirle a alguien desde el directorio
-                const mensaje = encodeURIComponent(`¡Hola ${c.nombre}! Te escribimos de ${configBanner.titulo}... `);
+                // CORRECCIÓN 1: Mensaje sin "..." y frase completa
+                const mensaje = encodeURIComponent(`¡Hola ${c.nombre}! Nos comunicamos de ${configBanner.titulo}. ¿En qué te podemos ayudar hoy?`);
                 
-                btnWsp = `<a href="https://wa.me/${telLimpio}?text=${mensaje}" target="_blank" class="m3-icon-btn" style="background:var(--m3-surface-variant);" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:var(--m3-primary); font-size:20px;">chat</span></a>`;
+                // CORRECCIÓN 3: Usar la API oficial para evitar mensajes dobles en la PC
+                btnWsp = `<a href="https://api.whatsapp.com/send?phone=${telLimpio}&text=${mensaje}" target="_blank" class="m3-icon-btn" style="background:var(--m3-surface-variant);" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:var(--m3-primary); font-size:20px;">chat</span></a>`;
             }
 
             card.innerHTML = `
@@ -300,25 +304,25 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('detalleUltimaVisita').innerText = `${fUltima[2]}/${fUltima[1]}/${fUltima[0]}`;
 
         const listaHistorial = document.getElementById('listaHistorialCliente');
-        listaHistorial.innerHTML = '';
-        
-        cliente.turnos.forEach(t => {
-            const f = t.fecha.split('-');
-            const fechaItem = `${f[2]}/${f[1]}/${f[0]}`;
-            
-            const card = document.createElement('div');
-            card.className = 'm3-card-list-item';
-            card.style.marginBottom = '8px';
-            card.innerHTML = `
-                <div class="m3-item-content">
-                    <span class="m3-item-title">${t.servicioReal}</span>
-                    <span class="m3-item-subtitle">${fechaItem} • ${t.hora || '--:--'}</span>
-                </div>
-                <span class="m3-item-amount text-success">$${t.monto}</span>
-            `;
-            listaHistorial.appendChild(card);
-        });
-
+        if(listaHistorial) {
+            listaHistorial.innerHTML = '';
+            cliente.turnos.forEach(t => {
+                const f = t.fecha.split('-');
+                const fechaItem = `${f[2]}/${f[1]}/${f[0]}`;
+                
+                const card = document.createElement('div');
+                card.className = 'm3-card-list-item';
+                card.style.marginBottom = '8px';
+                card.innerHTML = `
+                    <div class="m3-item-content">
+                        <span class="m3-item-title">${t.servicioReal}</span>
+                        <span class="m3-item-subtitle">${fechaItem} • ${t.hora || '--:--'}</span>
+                    </div>
+                    <span class="m3-item-amount text-success">$${t.monto}</span>
+                `;
+                listaHistorial.appendChild(card);
+            });
+        }
         document.getElementById('modalCliente').style.display = 'flex';
     };
 
@@ -352,11 +356,11 @@ document.addEventListener('DOMContentLoaded', () => {
             let btnWsp = '';
             if (r.tipo === 'ingreso' && r.telefono) {
                 const telLimpio = r.telefono.replace(/\D/g, ''); 
-                // Extraemos solo el nombre (antes del guion) para que el saludo sea natural
                 const nombreCorto = r.titulo.split('-')[0].trim();
                 const mensaje = encodeURIComponent(`¡Hola ${nombreCorto}! Te escribimos de ${configBanner.titulo} para recordarte tu turno de hoy a las ${r.hora}. ¡Te esperamos!`);
                 
-                btnWsp = `<a href="https://wa.me/${telLimpio}?text=${mensaje}" target="_blank" class="wsp-btn" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:white; font-size:18px;">chat</span></a>`;
+                // CORRECCIÓN 3: Usar API oficial para evitar el error doble de la URL corta en WhatsApp Web
+                btnWsp = `<a href="https://api.whatsapp.com/send?phone=${telLimpio}&text=${mensaje}" target="_blank" class="wsp-btn" onclick="event.stopPropagation()"><span class="material-symbols-rounded" style="color:white; font-size:18px;">chat</span></a>`;
             }
 
             card.innerHTML = `
@@ -378,8 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 8. LÓGICA DE MODALES DE REGISTRO (CON SERVICIOS) ---
-    
-    // Toggle para esconder Servicios si es un gasto y cambiar el Título dinámicamente
     window.toggleFormularioTipo = () => {
         const esGasto = document.querySelector('input[name="tipoRegistro"][value="gasto"]').checked;
         const campoServicios = document.getElementById('campoServicios');
@@ -387,17 +389,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const tituloModal = document.getElementById('modalTitle');
         
         if (esGasto) {
-            campoServicios.style.display = 'none';
-            campoTelefono.style.display = 'none';
-            document.getElementById('selectServicio').value = ""; 
-            
-            // CORRECCIÓN 1: Título dinámico para Gasto
+            if(campoServicios) campoServicios.style.display = 'none';
+            if(campoTelefono) campoTelefono.style.display = 'none';
+            const selectServicio = document.getElementById('selectServicio');
+            if(selectServicio) selectServicio.value = ""; 
             tituloModal.innerText = indiceEdicion > -1 ? "Editar Gasto" : "Nuevo Gasto";
         } else {
-            campoServicios.style.display = 'block';
-            campoTelefono.style.display = 'block';
-            
-            // CORRECCIÓN 1: Título dinámico para Cita
+            if(campoServicios) campoServicios.style.display = 'block';
+            if(campoTelefono) campoTelefono.style.display = 'block';
             tituloModal.innerText = indiceEdicion > -1 ? "Editar Cita" : "Nueva Cita";
         }
     };
@@ -443,8 +442,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('nombreCliente').value = "";
         document.getElementById('telefonoCliente').value = "";
         document.getElementById('montoTurno').value = "";
-        document.getElementById('horaTurno').value = "";
-        document.getElementById('selectServicio').value = "";
+        
+        const ahora = new Date();
+        document.getElementById('horaTurno').value = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+        
+        const selectServicio = document.getElementById('selectServicio');
+        if(selectServicio) selectServicio.value = "";
         
         document.querySelector('input[name="tipoRegistro"][value="ingreso"]').checked = true;
         window.toggleFormularioTipo(); 
@@ -468,11 +471,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (r.tipo === 'ingreso' && r.titulo.includes('-')) {
             let srv = r.titulo.split('-')[1].trim();
             let select = document.getElementById('selectServicio');
-            let existe = Array.from(select.options).some(opt => opt.value === srv);
-            if (existe) select.value = srv;
-            else select.value = "";
+            if(select) {
+                let existe = Array.from(select.options).some(opt => opt.value === srv);
+                if (existe) select.value = srv;
+                else select.value = "";
+            }
         } else {
-            document.getElementById('selectServicio').value = "";
+            let select = document.getElementById('selectServicio');
+            if(select) select.value = "";
         }
         
         document.getElementById('btnBorrar').style.display = "block";
@@ -491,6 +497,10 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('pelu_config_v2', JSON.stringify(configBanner));
         aplicarConfigVisual();
         window.cerrarConfig();
+
+        // CORRECCIÓN 2: Forzar la recarga de las listas para actualizar los textos y links
+        if(document.getElementById('vista-hoy') && !document.getElementById('vista-hoy').classList.contains('oculta')) renderizarVistaHoy();
+        if(document.getElementById('vista-clientes') && !document.getElementById('vista-clientes').classList.contains('oculta')) renderizarListaClientes();
     };
 
     document.getElementById('btnGuardar').onclick = () => {
@@ -514,12 +524,12 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('pelu_datos_v6', JSON.stringify(registros));
         window.cerrarModal();
         
-        if(!document.getElementById('vista-calendario').classList.contains('oculta')) renderizar(); 
-        if(!document.getElementById('vista-hoy').classList.contains('oculta')) renderizarVistaHoy();
-        if(!document.getElementById('vista-clientes').classList.contains('oculta')) renderizarListaClientes();
+        if(document.getElementById('vista-calendario') && !document.getElementById('vista-calendario').classList.contains('oculta')) renderizar(); 
+        if(document.getElementById('vista-hoy') && !document.getElementById('vista-hoy').classList.contains('oculta')) renderizarVistaHoy();
+        if(document.getElementById('vista-clientes') && !document.getElementById('vista-clientes').classList.contains('oculta')) renderizarListaClientes();
         
         actualizarEconomia();
-        actualizarBannerInfo(); // CORRECCIÓN 2: Refresca el contador de turnos de hoy
+        actualizarBannerInfo(); 
     };
 
     document.getElementById('btnBorrar').onclick = () => {
@@ -528,12 +538,12 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('pelu_datos_v6', JSON.stringify(registros));
             window.cerrarModal();
             
-            if(!document.getElementById('vista-calendario').classList.contains('oculta')) renderizar();
-            if(!document.getElementById('vista-hoy').classList.contains('oculta')) renderizarVistaHoy();
-            if(!document.getElementById('vista-clientes').classList.contains('oculta')) renderizarListaClientes();
+            if(document.getElementById('vista-calendario') && !document.getElementById('vista-calendario').classList.contains('oculta')) renderizar();
+            if(document.getElementById('vista-hoy') && !document.getElementById('vista-hoy').classList.contains('oculta')) renderizarVistaHoy();
+            if(document.getElementById('vista-clientes') && !document.getElementById('vista-clientes').classList.contains('oculta')) renderizarListaClientes();
             
             actualizarEconomia();
-            actualizarBannerInfo(); // CORRECCIÓN 2: Refresca el contador de turnos de hoy
+            actualizarBannerInfo(); 
         }
     };
 
@@ -553,11 +563,79 @@ document.addEventListener('DOMContentLoaded', () => {
         if(totNet) totNet.innerText = `$${(ing - gas).toLocaleString()}`;
     }
 
+    window.filtrarGrafico = (periodo) => {
+        document.querySelectorAll('.m3-chip').forEach(c => c.classList.remove('active'));
+        if(event && event.target) event.target.classList.add('active');
+
+        let etiquetas = [];
+        let datosIngresos = [];
+        let datosGastos = [];
+
+        if (periodo === 'mensual') {
+            for (let i = 5; i >= 0; i--) {
+                let d = new Date(hoyReal.getFullYear(), hoyReal.getMonth() - i, 1);
+                let mesStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}`;
+                let nombreMes = d.toLocaleString('es', { month: 'short' });
+                etiquetas.push(nombreMes.toUpperCase());
+
+                let reg = registros.filter(r => r.fecha.startsWith(mesStr));
+                datosIngresos.push(reg.filter(r => r.tipo === 'ingreso').reduce((sum, r) => sum + Number(r.monto), 0));
+                datosGastos.push(reg.filter(r => r.tipo === 'gasto').reduce((sum, r) => sum + Number(r.monto), 0));
+            }
+        } else if (periodo === 'diario') {
+            for (let i = 6; i >= 0; i--) {
+                let d = new Date();
+                d.setDate(d.getDate() - i);
+                let diaStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                etiquetas.push(`${d.getDate()}/${d.getMonth()+1}`);
+
+                let reg = registros.filter(r => r.fecha === diaStr);
+                datosIngresos.push(reg.filter(r => r.tipo === 'ingreso').reduce((sum, r) => sum + Number(r.monto), 0));
+                datosGastos.push(reg.filter(r => r.tipo === 'gasto').reduce((sum, r) => sum + Number(r.monto), 0));
+            }
+        }
+
+        renderizarGrafico(etiquetas, datosIngresos, datosGastos);
+    };
+
+    function renderizarGrafico(etiquetas, ingresos, gastos) {
+        const canvas = document.getElementById('graficoBalance');
+        if(!canvas) return;
+        const ctx = canvas.getContext('2d');
+        
+        if(chartInstance) chartInstance.destroy();
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: etiquetas,
+                datasets: [
+                    { label: 'Ingresos', data: ingresos, backgroundColor: '#146C2E', borderRadius: 4 },
+                    { label: 'Gastos', data: gastos, backgroundColor: '#BA1A1A', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#191C20' } }
+                },
+                scales: {
+                    y: { ticks: { color: '#43474E' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { ticks: { color: '#43474E' }, grid: { display: false } }
+                }
+            }
+        });
+    }
+
     // --- 10. LICENCIA ---
-    const LLAVE_MAESTRA = "SALON-2026"; 
+    const LLAVE_MAESTRA = "BARBER-2026"; 
     function verificarAcceso() {
         const activado = localStorage.getItem('app_activada');
-        if (activado !== 'true') document.getElementById('bloqueoLicencia').style.display = 'flex';
+        if (activado !== 'true') {
+            const bloqueo = document.getElementById('bloqueoLicencia');
+            if(bloqueo) bloqueo.style.display = 'flex';
+        }
     }
     window.validarLicencia = () => {
         const input = document.getElementById('inputLicencia').value.trim().toUpperCase();
