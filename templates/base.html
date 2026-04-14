@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Glow Studio">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2966/2966327.png">
+    
+    <title>{{ config.nombre_clinica if config else 'Glow Studio VIP' }}</title>
+    
+    {% block pwa %}{% endblock %}
+    
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,300,0,0" rel="stylesheet" />
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    {% if config %}
+    <style>
+        :root {
+            --accent-color: {{ config.color_primario }} !important; 
+        }
+    </style>
+    {% endif %}
+
+    <style>
+        /* Ajustes base para iOS */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #F2F2F7; /* Fondo gris característico de configuración iOS */
+            -webkit-tap-highlight-color: transparent; /* Quita el recuadro azul al tocar en móviles */
+        }
+        
+        /* Ajuste para el margen inferior del iPhone (Safe Area) */
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+</head>
+<body class="antialiased text-gray-900 pb-20"> <main class="w-full max-w-md mx-auto min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-xl border-t border-gray-200/60 pb-safe pb-2 pt-2 px-6 flex justify-between items-center w-full max-w-md mx-auto">
+        
+        <a href="/" class="flex flex-col items-center gap-1 text-[#FF375F]">
+            <span class="material-symbols-rounded" style="font-variation-settings: 'FILL' 1, 'wght' 400;">home</span>
+            <span class="text-[10px] font-medium">Inicio</span>
+        </a>
+        
+        <a href="/panel" class="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-600 transition-colors">
+            <span class="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">calendar_month</span>
+            <span class="text-[10px] font-medium">Turnos</span>
+        </a>
+        
+        <a href="/pacientes" class="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-600 transition-colors">
+            <span class="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">group</span>
+            <span class="text-[10px] font-medium">Clientes</span>
+        </a>
+        
+        <a href="/ajustes" class="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-600 transition-colors">
+            <span class="material-symbols-rounded" style="font-variation-settings: 'FILL' 0, 'wght' 300;">settings</span>
+            <span class="text-[10px] font-medium">Ajustes</span>
+        </a>
+        
+    </nav>
+
+</body>
+</html>

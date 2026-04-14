@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+
+{% block pwa %}
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pacientes">
+{% endblock %}
+
+{% block content %}
+<header style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 class="title-large">Pacientes</h1>
+        <p class="subtitle">Directorio e historial clínico.</p>
+    </div>
+    <a href="/logout" style="color: #ff3b30; text-decoration: none; font-weight: 600; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 12px; background: rgba(255,59,48,0.1); border-radius: 12px;">
+        <span class="material-symbols-rounded" style="font-size: 20px;">logout</span>
+        Salir
+    </a>
+</header>
+
+<div style="position: relative; margin-bottom: 20px;">
+    <span class="material-symbols-rounded" style="position: absolute; left: 16px; top: 16px; color: #8e8e93;">search</span>
+    <input type="text" id="buscador" onkeyup="filtrarPacientes()" class="ios-input" placeholder="Buscar por nombre o DNI..." style="padding-left: 48px; margin-bottom: 0;">
+</div>
+
+<div id="lista-pacientes" style="display: flex; flex-direction: column; gap: 10px;">
+    {% for p in pacientes %}
+    <div class="turno-card paciente-card" style="border-left-color: #5856d6; cursor: pointer;" onclick="abrirHistorial('{{ p.dni }}', '{{ p.nombre }}')">
+        <div class="turno-header">
+            <span class="turno-fecha" style="color: #1c1c1e; font-size: 1.2rem;">{{ p.nombre }}</span>
+        </div>
+        <div class="turno-detalle">
+            <p><strong>DNI:</strong> <span class="dni-text">{{ p.dni }}</span></p>
+            <p><strong>Contacto:</strong> {{ p.telefono }} | {{ p.cobertura }}</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="modal-overlay" id="modalHistorial" style="display: none;" onclick="cerrarModalHistorial(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-close-bar"></div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 id="modal-nombre-paciente" style="font-size: 1.5rem; font-weight: 700;">Historial</h2>
+            <button onclick="document.getElementById('modalHistorial').style.display='none'" style="background:none; border:none; color: var(--text-muted); cursor: pointer;">
+                <span class="material-symbols-rounded" style="font-size: 28px;">cancel</span>
+            </button>
+        </div>
+        
+        <div id="contenido-historial"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOdontogramaFondo" style="display: none; z-index: 100000;" onclick="cerrarModalOdontograma(event)">
+    <div class="modal-content" style="max-width: 850px; width: 95%; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e5e5ea; padding-bottom: 15px;">
+            <h2 style="font-size: 1.3rem; font-weight: 700; color: #1c1c1e; display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-rounded" style="color: #007aff;">dentistry</span> Carta Dental Interactiva
+            </h2>
+            <button onclick="cerrarModalOdontograma()" style="background: rgba(255,59,48,0.1); border: none; color: #ff3b30; cursor: pointer; font-weight: bold; font-size: 0.9rem; padding: 6px 12px; border-radius: 8px;">Cerrar</button>
+        </div>
+        <div id="contenedor-odontograma-modal"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="visorGaleria" style="display: none; background: rgba(0,0,0,0.95); z-index: 100001; flex-direction: column; align-items: center; justify-content: center;" onclick="document.getElementById('visorGaleria').style.display='none'">
+    
+    <span class="material-symbols-rounded" style="position: absolute; top: 20px; right: 20px; color: white; font-size: 40px; cursor: pointer;">close</span>
+    
+    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 1000px; padding: 0 20px;" onclick="event.stopPropagation()">
+        <button onclick="moverGaleria(-1)" style="background: rgba(255,255,255,0.15); border: none; color: white; border-radius: 50%; width: 55px; height: 55px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: background 0.2s;">
+            <span class="material-symbols-rounded" style="font-size: 35px;">chevron_left</span>
+        </button>
+        
+        <img id="imagenEnGaleria" src="" style="max-width: 85%; max-height: 85vh; border-radius: 8px; object-fit: contain; box-shadow: 0 10px 40px rgba(0,0,0,0.8); transition: opacity 0.2s;">
+        
+        <button onclick="moverGaleria(1)" style="background: rgba(255,255,255,0.15); border: none; color: white; border-radius: 50%; width: 55px; height: 55px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: background 0.2s;">
+            <span class="material-symbols-rounded" style="font-size: 35px;">chevron_right</span>
+        </button>
+    </div>
+    
+    <div id="indicadoresGaleria" style="display: flex; gap: 8px; margin-top: 20px;" onclick="event.stopPropagation()"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
+
+<script>
+    // =======================================================
+    // --- VARIABLES GLOBALES (Memoria del sistema) ---
+    // =======================================================
+    let pacienteActualDNI = "";
+    let mapaOdontograma = {}; 
+    let herramientaActiva = 'sano'; 
+    let memoriaGalerias = {}; // Guarda los arrays de fotos de cada turno
+    let galeriaActual = []; // Las fotos que se están viendo ahora
+    let indiceGaleria = 0; // Foto actual
+
+    function filtrarPacientes() {
+        const input = document.getElementById('buscador').value.toLowerCase();
+        const tarjetas = document.getElementsByClassName('paciente-card');
+        for (let i = 0; i < tarjetas.length; i++) {
+            const nombre = tarjetas[i].getElementsByTagName('h2')[0] ? tarjetas[i].getElementsByTagName('h2')[0].innerText.toLowerCase() : tarjetas[i].innerText.toLowerCase();
+            tarjetas[i].style.display = nombre.includes(input) ? "" : "none";
+        }
+    }
+
+    async function abrirHistorial(dni, nombre) {
+        pacienteActualDNI = dni; 
+        document.getElementById('modal-nombre-paciente').innerText = nombre;
+        
+        const contenedor = document.getElementById('contenido-historial');
+        contenedor.innerHTML = '<div style="text-align:center; padding: 40px 0;"><span class="material-symbols-rounded" style="animation: spin 1s linear infinite; font-size: 32px; color: #007aff;">sync</span><p style="color:#8e8e93; margin-top:10px;">Cargando historial...</p></div>';
+        document.getElementById('modalHistorial').style.display = 'flex';
+
+        try {
+            const respuesta = await fetch('/api/historial/' + dni);
+            const turnos = await respuesta.json();
+
+            if (turnos.length === 0) {
+                contenedor.innerHTML = '<p style="text-align:center; padding: 30px;">No hay registros para este paciente.</p>';
+                return;
+            }
+
+            const proximos = turnos.filter(t => t.estado === 'Proximo');
+            const pasados = turnos.filter(t => t.estado === 'Pasado');
+            let html = '';
+            const datosClinicos = turnos[0];
+
+            // 1. Cabecera y Perfil
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <button onclick="document.getElementById('form-editar-${dni}').style.display='block'" style="background: #e5e5ea; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;"><span class="material-symbols-rounded" style="font-size:18px;">edit</span> Editar</button>
+                    <form action="/eliminar_paciente/${dni}" method="POST" style="margin:0;" onsubmit="return confirm('⚠️ ¿Eliminar a este paciente y TODO su historial?');">
+                        <button type="submit" style="background: #ff3b30; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;"><span class="material-symbols-rounded" style="font-size:18px;">delete</span> Borrar</button>
+                    </form>
+                </div>
+                <form id="form-editar-${dni}" action="/editar_paciente/${dni}" method="POST" style="display: none; background: #f2f2f7; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #d1d1d6;">
+                    <input type="text" name="nombre" class="ios-input" value="${datosClinicos.nombre}" required style="margin-bottom: 8px;">
+                    <input type="text" name="telefono" class="ios-input" value="${datosClinicos.telefono}" required style="margin-bottom: 8px;">
+                    <input type="text" name="cobertura" class="ios-input" value="${datosClinicos.cobertura}" required style="margin-bottom: 8px;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                        <input type="number" name="edad" class="ios-input" value="${datosClinicos.edad || ''}" placeholder="Edad" style="width: 80px; margin: 0;">
+                        <input type="text" name="alergias" class="ios-input" value="${datosClinicos.alergias || ''}" placeholder="Alergias / Notas" style="flex-grow: 1; margin: 0;">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" onclick="document.getElementById('form-editar-${dni}').style.display='none'" style="flex-grow: 1; padding: 8px; border-radius: 8px; border: none; background: #d1d1d6; font-weight: bold; cursor: pointer;">Cancelar</button>
+                        <button type="submit" style="flex-grow: 1; padding: 8px; border-radius: 8px; border: none; background: #34c759; color: white; font-weight: bold; cursor: pointer;">Guardar</button>
+                    </div>
+                </form>
+                <div style="background: #fff3cd; color: #856404; padding: 12px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #ffeeba;">
+                    <p style="margin: 0 0 4px 0;"><strong>Edad:</strong> ${datosClinicos.edad || 'No registrada'} años</p>
+                    <p style="margin: 0;"><strong>Alergias:</strong> ${datosClinicos.alergias || 'No registra'}</p>
+                </div>
+            `;
+
+            // 2. Botón del Odontograma Premium (Abre modal)
+            html += `
+                <div style="margin-top: 24px; margin-bottom: 12px; background: #f2f2f7; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e5e5ea;">
+                    <div>
+                        <h3 style="color: #1c1c1e; font-size: 1.1rem; margin: 0 0 4px 0;">Odontograma Digital</h3>
+                        <p style="margin: 0; font-size: 0.85rem; color: #8e8e93;">Mapa dental interactivo</p>
+                    </div>
+                    <button type="button" onclick="abrirModalOdontograma()" style="background: #007aff; color: white; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 5px rgba(0,122,255,0.3);">
+                        <span class="material-symbols-rounded" style="font-size:20px;">open_in_full</span> Ver Mapa
+                    </button>
+                </div>
+            `;
+            document.getElementById('contenedor-odontograma-modal').innerHTML = generarOdontogramaUI(datosClinicos.odontograma);
+
+            // 3. Próximos Turnos (Versión Completa Restaurada)
+            if (proximos.length > 0) {
+                html += '<h3 style="color: #007aff; font-size: 1.1rem; margin-top: 24px; margin-bottom: 12px;">Próximos Turnos</h3>';
+                proximos.forEach(t => {
+                    html += `
+                    <div style="background: #f2f2f7; padding: 16px; border-radius: 12px; margin-bottom: 12px; border-left: 4px solid #34c759;">
+                        <p style="margin: 0 0 8px 0; font-weight: 600;">${t.fecha} - ${t.hora} hs</p>
+                        <p style="margin: 0 0 12px 0; font-size: 0.9rem;">Tratamiento: ${t.tratamiento}</p>
+                        <div id="botones-accion-${t.id}" style="display: flex; gap: 8px;">
+                            <button onclick="mostrarReprogramar(${t.id})" style="flex-grow:1; padding: 8px; border-radius: 8px; border: none; background: #007aff; color: white; font-weight: bold; cursor: pointer;">Reprogramar</button>
+                            <form action="/eliminar_turno/${t.id}" method="POST" style="margin:0; flex-grow:1;" onsubmit="return confirm('¿Cancelar turno definitivamente?');">
+                                <button type="submit" style="width: 100%; padding: 8px; border-radius: 8px; border: none; background: #ff3b30; color: white; font-weight: bold; cursor: pointer;">Cancelar</button>
+                            </form>
+                        </div>
+                        <form id="form-reprogramar-${t.id}" action="/reprogramar_turno/${t.id}" method="POST" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #d1d1d6;">
+                            <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: #1c1c1e;">Elegir nueva disponibilidad:</p>
+                            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+                                <input type="date" name="nueva_fecha" id="fecha-repro-${t.id}" class="ios-input" style="margin-bottom: 0;" value="${t.fecha}" onchange="actualizarHorasReprogramar(${t.id})" required>
+                                <select name="nueva_hora" id="hora-repro-${t.id}" class="ios-input" style="margin-bottom: 0;" required>
+                                    <option value="${t.hora}">${t.hora} hs (Actual)</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" onclick="ocultarReprogramar(${t.id})" style="flex-grow:1; padding: 8px; border-radius: 8px; border: none; background: #e5e5ea; color: #1c1c1e; font-weight: bold; cursor: pointer;">Atrás</button>
+                                <button type="submit" style="flex-grow:1; padding: 8px; border-radius: 8px; border: none; background: #34c759; color: white; font-weight: bold; cursor: pointer;">Guardar</button>
+                            </div>
+                        </form>
+                    </div>`;
+                });
+            }
+
+            // 4. Historial Pasado, Notas y GALERÍA
+            if (pasados.length > 0) {
+                html += '<h3 style="color: #8e8e93; font-size: 1.1rem; margin-top: 24px; margin-bottom: 12px;">Historial y Notas</h3>';
+                pasados.forEach(t => {
+                    // SEPARAMOS LAS FOTOS POR LA COMA
+                    // SEPARAMOS Y FILTRAMOS LAS FOTOS ROTAS O VACÍAS
+                    let fotosArrayRaw = (t.radiografia && t.radiografia.trim() !== "") ? t.radiografia.split(',') : [];
+                    let fotosArray = fotosArrayRaw.filter(url => url.trim() !== "" && url.includes("http")); 
+                        memoriaGalerias[t.id] = fotosArray;
+
+                    html += `
+                    <div style="background: #f9f9f9; padding: 16px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #e5e5ea;">
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 12px;">
+                            <p style="margin: 0; font-weight: 600; color: #1c1c1e;">${t.fecha} - ${t.tratamiento}</p>
+                            <span style="background: ${t.estado_pago === 'Pagado' || t.estado_pago === 'Obra Social' ? '#d4edda' : '#f8d7da'}; color: ${t.estado_pago === 'Pagado' || t.estado_pago === 'Obra Social' ? '#155724' : '#721c24'}; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                ${t.estado_pago}
+                            </span>
+                        </div>
+                        
+                        <form action="/actualizar_ficha/${t.id}" method="POST" enctype="multipart/form-data" style="margin: 0;" onsubmit="return guardarHistorialAjax(event, this, '${dni}');">
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #8e8e93; margin-bottom: 4px; display: block;">Evolución y Notas:</label>
+                            <textarea name="notas" class="ios-input" rows="3" placeholder="Ej: Se aplicó anestesia local..." style="padding: 10px; font-size: 0.9rem;">${t.notas || ''}</textarea>
+                            
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #8e8e93; margin-top: 10px; margin-bottom: 4px; display: block;">Imágenes / Radiografías:</label>
+                            <div id="radiografia-container-${t.id}">
+                                ${fotosArray.length > 0 ? `
+                                    <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px; align-items: center;">
+                                        ${fotosArray.map((url, idx) => `
+                                            <div style="flex-shrink: 0; width: 80px; height: 80px; border-radius: 10px; border: 1px solid #e5e5ea; overflow: hidden; position: relative;">
+                                                <img src="${url}" onclick="abrirGaleria(${t.id}, ${idx})" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;">
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                        <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #007aff; font-weight: 600; cursor: pointer; background: rgba(0,122,255,0.1); padding: 6px 12px; border-radius: 8px;">
+                                            <span class="material-symbols-rounded" style="font-size: 18px;">add_a_photo</span> Sumar fotos
+                                            <input type="file" name="radiografias" multiple class="ios-input" accept="image/*" style="display: none;">
+                                        </label>
+                                        <button type="button" onclick="borrarFoto(${t.id})" style="font-size: 0.8rem; color: #ff3b30; border: none; background: none; cursor: pointer; text-decoration: underline;">
+                                            Borrar toda la galería
+                                        </button>
+                                    </div>
+                                ` : `
+                                    <input type="file" name="radiografias" multiple class="ios-input" accept="image/*" style="padding: 8px; margin-bottom: 12px; font-size: 0.85rem;">
+                                `}
+                            </div>
+
+                            <div style="margin-bottom: 12px;">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-main);">Estado del Pago:</label>
+                                <select name="estado_pago" id="estado_pago_${t.id}" class="ios-input" onchange="mostrarCampoDeuda(this.value, ${t.id})" required>
+                                    <option value="Pagado" ${t.estado_pago === 'Pagado' ? 'selected' : ''}>Pagado</option>
+                                    <option value="Pendiente" ${t.estado_pago === 'Pendiente' ? 'selected' : ''}>Pendiente / Debe saldo</option>
+                                    <option value="Obra Social" ${t.estado_pago === 'Obra Social' ? 'selected' : ''}>Obra Social</option>
+                                </select>
+                            </div>
+
+                            <div id="contenedor_deuda_${t.id}" style="display: ${t.estado_pago === 'Pendiente' ? 'block' : 'none'}; margin-bottom: 12px; background: rgba(255,59,48,0.05); padding: 10px; border-radius: 12px; border-left: 3px solid #ff3b30;">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #ff3b30;">Monto Adeudado ($):</label>
+                                <input type="number" name="monto_deuda" id="monto_deuda_${t.id}" class="ios-input" style="margin-bottom: 0;" placeholder="Ej: 5000" value="${t.monto_deuda || ''}">
+                            </div>
+
+                            <button type="submit" class="ios-btn-submit btn-guardar-ficha" style="width: 100%; margin-top: 10px;">Guardar Cambios</button>
+                        </form>
+                    </div>`;
+                });
+            }
+
+            contenedor.innerHTML = html;
+            activarCompresorRadiografias();
+
+        } catch (error) {
+            contenedor.innerHTML = '<p style="text-align:center; color:#ff3b30; padding: 20px;">Error al cargar datos.</p>';
+        }
+    }
+
+    // =======================================================
+    // --- LÓGICA DE LA GALERÍA DE FOTOS (CARRUSEL) ---
+    // =======================================================
+    function abrirGaleria(idTurno, indexInicial) {
+        galeriaActual = memoriaGalerias[idTurno] || [];
+        if(galeriaActual.length === 0) return;
+        
+        indiceGaleria = indexInicial;
+        actualizarGaleria();
+        document.getElementById('visorGaleria').style.display = 'flex';
+    }
+
+    function moverGaleria(direccion) {
+        indiceGaleria += direccion;
+        if (indiceGaleria < 0) indiceGaleria = galeriaActual.length - 1;
+        if (indiceGaleria >= galeriaActual.length) indiceGaleria = 0;
+        actualizarGaleria();
+    }
+
+    function actualizarGaleria() {
+        document.getElementById('imagenEnGaleria').src = galeriaActual[indiceGaleria];
+        
+        // Dibujamos los puntitos abajo
+        let htmlPuntos = '';
+        for (let i = 0; i < galeriaActual.length; i++) {
+            let opacidad = (i === indiceGaleria) ? '1' : '0.3';
+            htmlPuntos += `<div style="width: 10px; height: 10px; border-radius: 50%; background: white; opacity: ${opacidad}; transition: opacity 0.3s;"></div>`;
+        }
+        document.getElementById('indicadoresGaleria').innerHTML = htmlPuntos;
+    }
+
+    // =======================================================
+    // --- LÓGICA DEL ODONTOGRAMA PREMIUM ---
+    // =======================================================
+    function abrirModalOdontograma() { document.getElementById('modalOdontogramaFondo').style.display = 'flex'; }
+    function cerrarModalOdontograma(event) {
+        if (!event || event.target.id === 'modalOdontogramaFondo') {
+            document.getElementById('modalOdontogramaFondo').style.display = 'none';
+        }
+    }
+
+    function setHerramienta(herramienta, elementoBoton) {
+        herramientaActiva = herramienta;
+        document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+        elementoBoton.classList.add('active');
+    }
+
+    function generarOdontogramaUI(datosGuardados) {
+        try {
+            mapaOdontograma = (typeof datosGuardados === 'string' && datosGuardados.trim() !== '') ? JSON.parse(datosGuardados) : (datosGuardados || {});
+        } catch (e) { mapaOdontograma = {}; }
+        
+        const q1 = [18, 17, 16, 15, 14, 13, 12, 11];
+        const q2 = [21, 22, 23, 24, 25, 26, 27, 28];
+        const q4 = [48, 47, 46, 45, 44, 43, 42, 41];
+        const q3 = [31, 32, 33, 34, 35, 36, 37, 38];
+
+        const dibujarCuadrante = (dientes, claseCuadrante) => {
+            let html = `<div class="cuadrante ${claseCuadrante}">`;
+            dientes.forEach(num => {
+                let estadoDienteEntero = mapaOdontograma[num] && mapaOdontograma[num].estado_entero ? mapaOdontograma[num].estado_entero : '';
+                let c_top = mapaOdontograma[num] && mapaOdontograma[num].top ? mapaOdontograma[num].top : '';
+                let c_bottom = mapaOdontograma[num] && mapaOdontograma[num].bottom ? mapaOdontograma[num].bottom : '';
+                let c_left = mapaOdontograma[num] && mapaOdontograma[num].left ? mapaOdontograma[num].left : '';
+                let c_right = mapaOdontograma[num] && mapaOdontograma[num].right ? mapaOdontograma[num].right : '';
+                let c_center = mapaOdontograma[num] && mapaOdontograma[num].center ? mapaOdontograma[num].center : '';
+
+                html += `
+                <div class="diente-wrapper">
+                    <span class="diente-numero">${num}</span>
+                    <div class="diente-geo ${estadoDienteEntero}" id="diente-geo-${num}">
+                        <div class="superficie cara-top ${c_top}" onclick="pintarSuperficie(${num}, 'top')"></div>
+                        <div class="superficie cara-left ${c_left}" onclick="pintarSuperficie(${num}, 'left')"></div>
+                        <div class="superficie cara-center ${c_center}" onclick="pintarSuperficie(${num}, 'center')"></div>
+                        <div class="superficie cara-right ${c_right}" onclick="pintarSuperficie(${num}, 'right')"></div>
+                        <div class="superficie cara-bottom ${c_bottom}" onclick="pintarSuperficie(${num}, 'bottom')"></div>
+                    </div>
+                </div>`;
+            });
+            html += `</div>`;
+            return html;
+        };
+
+        return `
+            <div class="odontograma-container">
+                <div class="toolbar-odontograma">
+                    <button type="button" class="tool-btn active" data-tool="sano" onclick="setHerramienta('sano', this)"><span class="material-symbols-rounded">ink_eraser</span> Sano / Borrar</button>
+                    <button type="button" class="tool-btn" data-tool="caries" onclick="setHerramienta('caries', this)"><span class="material-symbols-rounded" style="color:#ff3b30">coronavirus</span> Caries</button>
+                    <button type="button" class="tool-btn" data-tool="obturado" onclick="setHerramienta('obturado', this)"><span class="material-symbols-rounded" style="color:#007aff">healing</span> Obturación</button>
+                    <button type="button" class="tool-btn" data-tool="corona" onclick="setHerramienta('corona', this)"><span class="material-symbols-rounded" style="color:#ffcc00">diamond</span> Corona</button>
+                    <button type="button" class="tool-btn" data-tool="extraccion" onclick="setHerramienta('extraccion', this)"><span class="material-symbols-rounded" style="color:#1c1c1e">close</span> Extracción</button>
+                </div>
+                <div class="odontograma-cross-chart">
+                    ${dibujarCuadrante(q1, 'cuadrante-1')}
+                    ${dibujarCuadrante(q2, 'cuadrante-2')}
+                    ${dibujarCuadrante(q4, 'cuadrante-4')}
+                    ${dibujarCuadrante(q3, 'cuadrante-3')}
+                </div>
+            </div>`;
+    }
+
+    async function pintarSuperficie(numeroPieza, nombreSuperficie) {
+        if (!mapaOdontograma[numeroPieza]) mapaOdontograma[numeroPieza] = { top: '', bottom: '', left: '', right: '', center: '', estado_entero: '' };
+        const contenedorDiente = document.getElementById(`diente-geo-${numeroPieza}`);
+        
+        if (herramientaActiva === 'extraccion' || herramientaActiva === 'corona') {
+            contenedorDiente.className = `diente-geo ${herramientaActiva}`; 
+            mapaOdontograma[numeroPieza].estado_entero = herramientaActiva; 
+        } else if (herramientaActiva === 'sano') {
+            contenedorDiente.className = 'diente-geo'; 
+            mapaOdontograma[numeroPieza].estado_entero = '';
+            contenedorDiente.querySelector(`.cara-${nombreSuperficie}`).className = `superficie cara-${nombreSuperficie}`;
+            mapaOdontograma[numeroPieza][nombreSuperficie] = '';
+        } else {
+            contenedorDiente.className = 'diente-geo'; 
+            mapaOdontograma[numeroPieza].estado_entero = '';
+            contenedorDiente.querySelector(`.cara-${nombreSuperficie}`).className = `superficie cara-${nombreSuperficie} ${herramientaActiva}`;
+            mapaOdontograma[numeroPieza][nombreSuperficie] = herramientaActiva;
+        }
+
+        try {
+            await fetch('/guardar_odontograma/' + pacienteActualDNI, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mapaOdontograma) });
+        } catch (error) { console.error(error); }
+    }
+
+    // =======================================================
+    // --- UTILIDADES, AJAX Y COMPRESOR DE FOTOS ---
+    // =======================================================
+    function mostrarCampoDeuda(estado, idTurno) {
+        const contenedorDeuda = document.getElementById(`contenedor_deuda_${idTurno}`);
+        const inputDeuda = document.getElementById(`monto_deuda_${idTurno}`);
+        if (estado === 'Pendiente') { contenedorDeuda.style.display = 'block'; inputDeuda.required = true; inputDeuda.focus(); } 
+        else { contenedorDeuda.style.display = 'none'; inputDeuda.required = false; inputDeuda.value = ''; }
+    }
+
+    async function guardarHistorialAjax(event, formulario, dniPaciente) {
+        event.preventDefault(); 
+        const botonSubmit = formulario.querySelector('.btn-guardar-ficha');
+        const textoOriginal = botonSubmit.innerHTML;
+        botonSubmit.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">sync</span> Guardando...';
+        botonSubmit.disabled = true;
+
+        try {
+            await fetch(formulario.action, { method: 'POST', body: new FormData(formulario) });
+            const nombrePaciente = document.getElementById('modal-nombre-paciente').innerText;
+            await abrirHistorial(dniPaciente, nombrePaciente); 
+        } catch (error) {
+            alert("Hubo un problema al guardar. Revisá tu conexión.");
+            if(document.body.contains(botonSubmit)) { botonSubmit.innerHTML = textoOriginal; botonSubmit.disabled = false; }
+        }
+        return false;
+    }
+
+    function activarCompresorRadiografias() {
+        // Seleccionamos todos los inputs que se llamen radiografias
+        const inputsDeFoto = document.querySelectorAll('input[type="file"][name="radiografias"]');
+        inputsDeFoto.forEach(input => {
+            // Limpiamos el evento viejo para que no se duplique
+            const new_input = input.cloneNode(true);
+            input.parentNode.replaceChild(new_input, input);
+            
+            new_input.addEventListener('change', async function(event) {
+                const archivos = event.target.files;
+                if (!archivos || archivos.length === 0) return;
+
+                const form = new_input.closest('form');
+                const botonGuardar = form.querySelector('.btn-guardar-ficha');
+                if(!botonGuardar) return;
+                
+                const textoOriginal = botonGuardar.innerText;
+                botonGuardar.innerHTML = '<span class="material-symbols-rounded" style="animation: spin 1s linear infinite;">sync</span> Comprimiendo fotos...';
+                botonGuardar.disabled = true;
+
+                const opciones = { maxSizeMB: 0.4, maxWidthOrHeight: 1200, useWebWorker: true };
+                const dataTransfer = new DataTransfer();
+
+                try {
+                    // Iteramos y comprimimos TODAS las fotos seleccionadas
+                    for (let i = 0; i < archivos.length; i++) {
+                        const original = archivos[i];
+                        const archivoComprimido = await imageCompression(original, opciones);
+                        const nuevoArchivo = new File([archivoComprimido], original.name, { type: archivoComprimido.type });
+                        dataTransfer.items.add(nuevoArchivo);
+                    }
+                    new_input.files = dataTransfer.files; // Guardamos las 4 o 5 fotos comprimidas
+                } catch (error) {
+                    console.error("Error al comprimir:", error);
+                    alert("Error optimizando imágenes.");
+                } finally {
+                    botonGuardar.innerHTML = textoOriginal;
+                    botonGuardar.disabled = false;
+                }
+            });
+        });
+    }
+
+    function cerrarModalHistorial(event) {
+        if (event.target.id === 'modalHistorial') { document.getElementById("modalHistorial").style.display = "none"; }
+    }
+
+    async function borrarFoto(idTurno) {
+        if(confirm("⚠️ ¿Seguro que querés eliminar TODAS las fotos de este turno?")) {
+            try {
+                const respuesta = await fetch('/eliminar_radiografia/' + idTurno, { method: 'POST' });
+                const resultado = await respuesta.json();
+                if (resultado.success) {
+                    const nombrePaciente = document.getElementById('modal-nombre-paciente').innerText;
+                    await abrirHistorial(pacienteActualDNI, nombrePaciente); // Recargamos para que desaparezcan las fotos
+                } else alert("Error al eliminar las imágenes.");
+            } catch (error) { alert("Ocurrió un error de conexión."); }
+        }
+    }
+</script>
+{% endblock %}

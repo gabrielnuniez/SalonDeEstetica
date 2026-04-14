@@ -1,0 +1,535 @@
+/* Variables de Diseño (Mantenemos las mismas) */
+:root {
+    --bg-color: #f2f2f7;
+    --card-bg: #ffffff;
+    --text-main: #1c1c1e;
+    --text-muted: #8e8e93;
+    --accent-blue: #007aff;
+    --border-radius-lg: 24px;
+    --border-radius-md: 16px;
+    --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; padding: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg-color); 
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 1. CORRECCIÓN DEL CONTENEDOR PRINCIPAL */
+/* 1. CORRECCIÓN DEL CONTENEDOR PRINCIPAL */
+main {
+    flex: 1 0 auto; 
+}
+
+.container {
+    width: 100%; 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    padding-top: 60px;
+    padding-left: 5%;
+    padding-right: 5%;
+    padding-bottom: 150px; /* Trasladamos el colchón gigante directamente aquí para que nada lo anule */
+}
+
+/* 2. OPTIMIZACIÓN DE LA GRILLA */
+.services-grid {
+    display: grid;
+    /* Ajustamos el tamaño mínimo de las tarjetas para que no se vean gigantes ni se encimen */
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+    gap: 24px; 
+    margin-top: 30px;
+}
+
+/* 3. BARRA INFERIOR (TAB BAR) MÁS ESTABLE */
+.ios-tab-bar {
+    position: fixed; 
+    bottom: 0; 
+    left: 0; 
+    width: 100%;
+    background: rgba(255, 255, 255, 0.8); 
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex; 
+    justify-content: space-around;
+    padding: 15px 0 30px 0; /* Padding inferior para el área de gestos de los iPhone modernos */
+    z-index: 9999; /* Asegura que siempre esté por encima de todo */
+}
+
+/* Estilos de las tarjetas y otros elementos se mantienen igual para no romper la estética */
+.ios-card-primary {
+    background: linear-gradient(135deg, #007aff, #00b4d8); 
+    color: white; border-radius: var(--border-radius-lg);
+    padding: 35px; box-shadow: 0 15px 35px rgba(0, 122, 255, 0.2);
+    margin-bottom: 40px; display: flex; align-items: center; gap: 24px;
+    transition: transform 0.2s ease;
+}
+
+.service-item {
+    background: var(--card-bg); border-radius: var(--border-radius-md);
+    padding: 30px 20px; text-align: center; box-shadow: var(--shadow-soft);
+    text-decoration: none; color: var(--text-main);
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    transition: all 0.3s ease;
+}
+
+.service-item:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.1); }
+
+.service-icon {
+    background: rgba(0, 122, 255, 0.08); color: var(--accent-blue);
+    width: 60px; height: 60px; border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+}
+
+.tab-item {
+    text-decoration: none; color: var(--text-muted);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    font-size: 0.85rem; font-weight: 500;
+}
+.tab-item.active { color: var(--accent-blue); }
+/* --- Formularios Estilo iOS --- */
+.ios-input {
+    width: 100%;
+    padding: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-size: 1rem;
+    margin-bottom: 20px;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.ios-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+}
+
+.ios-btn-submit {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    background-color: var(--accent-blue);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.ios-btn-submit:active {
+    background-color: var(--accent-blue-hover);
+    transform: scale(0.98);
+}
+/* --- Tarjetas del Panel de Control --- */
+.turno-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius-md);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-left: 5px solid var(--accent-blue); /* Una franja de color para darle un toque premium */
+    transition: transform 0.2s ease;
+}
+
+.turno-card:hover {
+    transform: translateX(4px);
+}
+
+.turno-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: 12px;
+}
+
+.turno-fecha {
+    font-weight: 700;
+    color: var(--accent-blue);
+    font-size: 1.1rem;
+}
+
+.turno-pill {
+    background: rgba(0,122,255,0.1);
+    color: var(--accent-blue);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.turno-detalle p {
+    margin: 4px 0;
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+/* --- CALENDARIO ESTILO iOS --- */
+.calendar-header {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--card-bg); padding: 16px 20px;
+    border-radius: var(--border-radius-md); box-shadow: var(--shadow-soft);
+    margin-bottom: 16px;
+}
+.calendar-btn {
+    background: none; border: none; color: var(--accent-blue);
+    font-size: 24px; cursor: pointer; padding: 5px;
+    display: flex; align-items: center; justify-content: center;
+}
+.calendar-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
+    background: var(--card-bg); padding: 20px;
+    border-radius: var(--border-radius-lg); box-shadow: var(--shadow-soft);
+}
+.calendar-day-name {
+    text-align: center; font-weight: 600; font-size: 0.8rem;
+    color: var(--text-muted); margin-bottom: 8px;
+}
+.calendar-day {
+    aspect-ratio: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    border-radius: 50%; font-size: 1rem; font-weight: 500;
+    cursor: pointer; transition: all 0.2s ease; position: relative;
+}
+.calendar-day:hover { background: #f2f2f7; }
+.calendar-day.empty { cursor: default; }
+.calendar-day.empty:hover { background: transparent; }
+.calendar-day.today { background: var(--accent-blue); color: white; }
+.calendar-day.has-turnos::after {
+    content: ''; width: 6px; height: 6px;
+    background-color: #ff3b30; border-radius: 50%;
+    position: absolute; bottom: 4px;
+}
+
+/* --- MODAL (Ventana Flotante) --- */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+    display: none; justify-content: center; align-items: flex-end; /* Aparece desde abajo en móviles */
+    z-index: 99999;
+}
+.modal-content {
+    background: var(--bg-color); width: 100%; max-width: 600px;
+    max-height: 85vh; overflow-y: auto;
+    border-radius: 24px 24px 0 0; padding: 24px;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease-out;
+    padding-bottom: 60px;
+}
+@media (min-width: 768px) {
+    .modal-overlay { align-items: center; }
+    .modal-content { border-radius: 24px; padding-bottom: 24px; }
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.modal-close-bar {
+    width: 40px; height: 5px; background: #ccc;
+    border-radius: 10px; margin: 0 auto 20px auto;
+}
+
+/* ======================================================= */
+/* --- CARRUSEL HORIZONTAL PREMIUM (PC & MOBILE) --- */
+/* ======================================================= */
+
+/* 1. Fondo oscuro (Desbordado para tapar la barra de iOS) */
+.modal-overlay-gallery {
+    position: fixed !important; 
+    top: -50px !important;    /* Forzamos que suba más allá del límite */
+    bottom: -50px !important; /* Forzamos que baje más allá del límite */
+    left: 0 !important; 
+    right: 0 !important;
+    width: auto !important; 
+    height: auto !important; 
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    display: none; justify-content: center; align-items: center;
+    z-index: 999999 !important;
+    opacity: 0; transition: opacity 0.3s ease;
+}
+
+.modal-overlay-gallery.open {
+    opacity: 1;
+}
+
+/* 2. El contenedor invisible que agrupa el carrusel */
+.modal-content-gallery {
+    width: 100%; 
+    max-width: 500px; /* Evita que se deforme en monitores de PC */
+    position: relative;
+    display: flex; flex-direction: column; align-items: center;
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-overlay-gallery.open .modal-content-gallery {
+    transform: scale(1);
+}
+
+/* 3. El Riel por donde deslizan las tarjetas */
+.carousel-track {
+    display: flex; 
+    gap: 15px;
+    width: 100%; 
+    padding: 20px; 
+    overflow-x: auto;
+    scroll-snap-type: x mandatory; /* El imán que centra la tarjeta al soltar */
+    scroll-behavior: smooth;
+    -ms-overflow-style: none; scrollbar-width: none; 
+}
+.carousel-track::-webkit-scrollbar { display: none; }
+
+/* 4. Diseño de cada Tarjeta individual */
+.carousel-card {
+    flex: 0 0 85%; /* Ocupa el 85% para asomar las otras tarjetas */
+    background: #f2f2f7;
+    border-radius: 24px;
+    scroll-snap-align: center; 
+    overflow: hidden;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    display: flex; flex-direction: column;
+    /* Efecto de desenfoque para las tarjetas que no están en el centro */
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0.5; 
+    transform: scale(0.9); 
+}
+
+/* La tarjeta que está activa (en el centro) */
+.carousel-card.active-card {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.carousel-card img {
+    width: 100%; height: 250px; object-fit: cover;
+}
+
+.carousel-card-content {
+    padding: 24px; flex-grow: 1; display: flex; flex-direction: column;
+}
+.carousel-card-content h2 { margin: 0 0 8px 0; font-size: 1.4rem; color: #1c1c1e;}
+.carousel-card-content p { color: #8e8e93; font-size: 0.95rem; line-height: 1.4; margin-bottom: 24px; flex-grow: 1; }
+
+/* 5. Botón de Cerrar (X) */
+.close-gallery {
+    position: absolute; top: -10px; right: 20px;
+    background: rgba(255,255,255,0.25); color: white;
+    border: none; border-radius: 50%; width: 36px; height: 36px;
+    font-size: 24px; display: flex; align-items: center; justify-content: center; 
+    cursor: pointer; z-index: 100; backdrop-filter: blur(5px);
+}
+
+/* 6. Flechas de Navegación (Solo para PC) */
+.carousel-nav-btn {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--accent-blue, #007aff);
+    border: none; border-radius: 50%; width: 44px; height: 44px;
+    display: none; /* Ocultas por defecto en celulares */
+    align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+}
+/* Media Query: Mostrar flechas solo si la pantalla es grande (PC/Tablet) */
+@media (min-width: 768px) {
+    .carousel-nav-btn { display: flex; }
+}
+.carousel-nav-btn.prev { left: -20px; }
+.carousel-nav-btn.next { right: -20px; }
+
+/* 7. Puntos Indicadores debajo del carrusel */
+.carousel-indicators {
+    display: flex; gap: 8px; justify-content: center; margin-top: 15px;
+}
+.carousel-indicators .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transition: background 0.3s, transform 0.3s;
+}
+.carousel-indicators .dot.active {
+    background: white; transform: scale(1.3);
+}
+
+/* --- ESTILOS ESPECÍFICOS DISEÑO 2 (LIMPIEZA/VERTICAL) --- */
+.gallery-card-vertical {
+    background: white; border-radius: 12px;
+    padding: 15px; margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.gallery-card-vertical img {
+    width: 100%; height: auto; border-radius: 8px; margin-bottom: 10px;
+    object-fit: cover;
+}
+
+.gallery-card-vertical h4 { margin: 0 0 5px 0; font-size: 1rem; color: #1c1c1e; }
+.gallery-card-vertical p { margin: 0; font-size: 0.85rem; color: #8e8e93; line-height: 1.4; }
+
+/* --- SECCIÓN DE CONTACTO Y REDES --- */
+.footer-container {
+    margin-top: 40px;
+    margin-bottom: 120px; /* Espacio extra para que la barra no tape nada */
+    padding: 0 5px;
+}
+
+.contact-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1c1c1e;
+    margin-bottom: 15px;
+}
+
+/* Tarjeta de Ubicación */
+.location-card {
+    background: white;
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+    margin-bottom: 25px;
+}
+
+.location-card:active {
+    transform: scale(0.97);
+}
+
+.location-icon-wrapper {
+    background: rgba(0, 122, 255, 0.1);
+    color: #007aff;
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Botones de Redes Sociales */
+.social-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.social-circle {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+
+.social-circle:active {
+    transform: scale(0.9);
+}
+
+/* Colores de marca */
+.social-circle.instagram { color: #E1306C; }
+.social-circle.facebook { color: #1877F2; }
+.social-circle.whatsapp { color: #25D366; }
+
+/* ======================================================= */
+/* --- ODONTOGRAMA PREMIUM: 5 SUPERFICIES (NIVEL DENTALINK) --- */
+/* ======================================================= */
+
+.odontograma-container {
+    background: white; padding: 20px; border-radius: 16px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x: auto;
+}
+
+/* Paleta de Herramientas */
+.toolbar-odontograma {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    margin-bottom: 25px; padding: 15px; background: #f2f2f7; border-radius: 12px;
+}
+.tool-btn {
+    padding: 8px 16px; border-radius: 20px; border: 2px solid transparent;
+    background: white; color: #1c1c1e; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; font-size: 0.9rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s;
+}
+.tool-btn.active { border-color: #1c1c1e; transform: scale(1.05); }
+
+/* Colores de las herramientas activas */
+.tool-btn[data-tool="sano"].active { border-color: #34c759; color: #34c759; }
+.tool-btn[data-tool="caries"].active { border-color: #ff3b30; color: #ff3b30; }
+.tool-btn[data-tool="obturado"].active { border-color: #007aff; color: #007aff; }
+.tool-btn[data-tool="extraccion"].active { border-color: #1c1c1e; color: #1c1c1e; }
+.tool-btn[data-tool="corona"].active { border-color: #ffcc00; color: #d4a000; }
+
+/* La grilla principal */
+.odontograma-cross-chart {
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; 
+    gap: 0; min-width: 650px; margin: 0 auto;
+}
+.cuadrante { display: flex; padding: 20px 10px; gap: 8px; align-items: center; }
+.cuadrante-1 { border-right: 2px solid #e5e5ea; border-bottom: 2px solid #e5e5ea; justify-content: flex-end; }
+.cuadrante-2 { border-bottom: 2px solid #e5e5ea; justify-content: flex-start; }
+.cuadrante-4 { border-right: 2px solid #e5e5ea; justify-content: flex-end; }
+.cuadrante-3 { justify-content: flex-start; }
+
+/* El Diente Individual */
+.diente-wrapper {
+    display: flex; flex-direction: column; align-items: center; gap: 5px; position: relative;
+}
+.cuadrante-1 .diente-wrapper, .cuadrante-2 .diente-wrapper { flex-direction: column-reverse; }
+.diente-numero { font-size: 0.8rem; font-weight: 700; color: #8e8e93; }
+
+/* Diseño Geométrico de 5 Caras (En forma de cruz) */
+.diente-geo {
+    display: grid; 
+    grid-template-columns: 10px 16px 10px; 
+    grid-template-rows: 10px 16px 10px; 
+    width: 36px; height: 36px; cursor: pointer;
+    position: relative;
+}
+
+/* Las 5 superficies individuales */
+.superficie { background: white; border: 1px solid #c7c7cc; transition: background 0.2s; }
+.superficie:hover { filter: brightness(0.9); }
+
+.cara-top { grid-column: 2; grid-row: 1; border-bottom: none; border-radius: 4px 4px 0 0; }
+.cara-bottom { grid-column: 2; grid-row: 3; border-top: none; border-radius: 0 0 4px 4px; }
+.cara-left { grid-column: 1; grid-row: 2; border-right: none; border-radius: 4px 0 0 4px; }
+.cara-right { grid-column: 3; grid-row: 2; border-left: none; border-radius: 0 4px 4px 0; }
+.cara-center { grid-column: 2; grid-row: 2; border: 1px solid #c7c7cc; border-radius: 2px; }
+
+/* --- COLORES APLICADOS A LAS SUPERFICIES --- */
+.superficie.caries { background: #ff3b30; border-color: #d70015; }
+.superficie.obturado { background: #007aff; border-color: #0056b3; }
+
+/* --- ESTADOS DE DIENTE ENTERO --- */
+.diente-geo.extraccion::after {
+    content: "X"; position: absolute; top: 50%; left: 50%; 
+    transform: translate(-50%, -50%); color: #1c1c1e; 
+    font-weight: 900; font-size: 32px; pointer-events: none;
+}
+.diente-geo.extraccion .superficie { background: #e5e5ea; border-color: #8e8e93; }
+
+.diente-geo.corona {
+    outline: 3px solid #ffcc00; border-radius: 4px; outline-offset: 2px;
+}

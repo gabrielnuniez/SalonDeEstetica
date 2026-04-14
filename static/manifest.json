@@ -1,0 +1,15 @@
+{
+  "name": "Agenda Dental VIP",
+  "short_name": "Agenda",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f2f2f7",
+  "theme_color": "#007aff",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2966/2966327.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

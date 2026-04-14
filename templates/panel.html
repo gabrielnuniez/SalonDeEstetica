@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block pwa %}
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Agenda">
+{% endblock %}
+
+{% block content %}
+<header style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 class="title-large">Calendario</h1>
+        <p class="subtitle">Seleccioná un día para ver la agenda.</p>
+    </div>
+    <a href="/logout" style="color: #ff3b30; text-decoration: none; font-weight: 600; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 12px; background: rgba(255,59,48,0.1); border-radius: 12px;">
+        <span class="material-symbols-rounded" style="font-size: 20px;">logout</span>
+        Salir
+    </a>
+</header>
+<div style="margin-bottom: 20px;">
+    <button onclick="mostrarResumenHoy()" style="width: 100%; background: linear-gradient(135deg, #007aff, #5856d6); color: white; border: none; padding: 16px; border-radius: 16px; font-size: 1rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,122,255,0.3);">
+        <span class="material-symbols-rounded">wb_sunny</span>
+        Resumen de Hoy
+    </button>
+</div>
+
+<div class="calendar-header">
+    <button class="calendar-btn" onclick="cambiarMes(-1)">
+        <span class="material-symbols-rounded">chevron_left</span>
+    </button>
+    <h2 id="mes-anio" style="font-size: 1.2rem; font-weight: 600; margin: 0;">Cargando...</h2>
+    <button class="calendar-btn" onclick="cambiarMes(1)">
+        <span class="material-symbols-rounded">chevron_right</span>
+    </button>
+</div>
+
+<div class="calendar-grid" id="calendario">
+</div>
+
+<div class="modal-overlay" id="modalTurnos" onclick="cerrarModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-close-bar"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 id="modal-titulo" style="font-size: 1.5rem; font-weight: 700;">Turnos del Día</h2>
+            <button onclick="document.getElementById('modalTurnos').style.display='none'" style="background:none; border:none; color: var(--text-muted); cursor: pointer;">
+                <span class="material-symbols-rounded" style="font-size: 28px;">cancel</span>
+            </button>
+        </div>
+        
+        <div id="lista-turnos-modal">
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="modalResumen" onclick="cerrarModalResumen(event)" style="display: none;">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-close-bar"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="font-size: 1.5rem; font-weight: 700;">Agenda del Día</h2>
+            <button onclick="document.getElementById('modalResumen').style.display='none'" style="background:none; border:none; color: var(--text-muted); cursor: pointer;">
+                <span class="material-symbols-rounded" style="font-size: 28px;">cancel</span>
+            </button>
+        </div>
+        
+        <div id="contenido-resumen">
+            </div>
+    </div>
+</div>
+
+
+<script>
+    let fechaActual = new Date();
+    let todosLosTurnos = [];
+
+    const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const diasSemana = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+    async function cargarTurnos() {
+        const respuesta = await fetch('/api/turnos');
+        todosLosTurnos = await respuesta.json();
+        renderizarCalendario();
+    }
+
+    function renderizarCalendario() {
+        const año = fechaActual.getFullYear();
+        const mes = fechaActual.getMonth();
+        
+        document.getElementById("mes-anio").innerText = `${meses[mes]} ${año}`;
+        
+        const primerDiaMes = new Date(año, mes, 1).getDay();
+        const diasEnMes = new Date(año, mes + 1, 0).getDate();
+        
+        const grid = document.getElementById("calendario");
+        grid.innerHTML = "";
+
+        diasSemana.forEach(dia => {
+            grid.innerHTML += `<div class="calendar-day-name">${dia}</div>`;
+        });
+
+        for (let i = 0; i < primerDiaMes; i++) {
+            grid.innerHTML += `<div class="calendar-day empty"></div>`;
+        }
+
+        for (let dia = 1; dia <= diasEnMes; dia++) {
+            const fechaString = `${año}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+            const turnosDelDia = todosLosTurnos.filter(t => t.fecha === fechaString);
+            const clasePunto = turnosDelDia.length > 0 ? "has-turnos" : "";
+            
+            const hoy = new Date();
+            const esHoy = (dia === hoy.getDate() && mes === hoy.getMonth() && año === hoy.getFullYear()) ? "today" : "";
+
+            grid.innerHTML += `
+                <div class="calendar-day ${esHoy} ${clasePunto}" onclick="abrirModal('${fechaString}', ${dia})">
+                    ${dia}
+                </div>`;
+        }
+    }
+
+    function cambiarMes(direccion) {
+        fechaActual.setMonth(fechaActual.getMonth() + direccion);
+        renderizarCalendario();
+    }
+
+    function abrirModal(fechaString, dia) {
+        const turnosDelDia = todosLosTurnos.filter(t => t.fecha === fechaString);
+        turnosDelDia.sort((a, b) => a.hora.localeCompare(b.hora));
+
+        document.getElementById("modal-titulo").innerText = `Turnos del ${dia} de ${meses[fechaActual.getMonth()]}`;
+        const contenedor = document.getElementById("lista-turnos-modal");
+        
+        if (turnosDelDia.length === 0) {
+            contenedor.innerHTML = `
+                <div style="text-align:center; padding: 40px 20px; opacity:0.5;">
+                    <span class="material-symbols-rounded" style="font-size: 48px;">event_available</span>
+                    <p>Día libre. No hay turnos agendados.</p>
+                </div>`;
+        } else {
+            contenedor.innerHTML = turnosDelDia.map(turno => {
+                
+                // 1. INTELIGENCIA DE RELOJ: ¿Este turno ya pasó?
+                const ahora = new Date();
+                const hoyStr = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
+                const horaActualStr = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+                const esPasado = (turno.fecha < hoyStr) || (turno.fecha === hoyStr && turno.hora <= horaActualStr);
+
+                // 2. ARMADO DE BOTONES (Dinámico)
+                let botonesHTML = '';
+                
+                if (esPasado) {
+                    // SI YA PASÓ
+                    botonesHTML = `
+                        <div style="width: 100%; text-align: center; margin-bottom: 8px;">
+                            <span style="color: #8e8e93; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                                <span class="material-symbols-rounded" style="font-size: 16px;">history</span> Turno Finalizado
+                            </span>
+                        </div>
+                        <form action="/eliminar_turno/${turno.id}" style="flex-grow: 1; margin: 0; width: 100%;" onsubmit="return procesarAccionAjax(event, this, '${fechaString}', ${dia}, '¿Seguro que querés eliminar este turno del registro histórico?');">
+                            <button type="submit" class="ios-btn-submit" style="background: rgba(255,59,48,0.1); color: #ff3b30; padding: 10px; font-size: 0.9rem; width: 100%;">
+                                Eliminar del Registro
+                            </button>
+                        </form>
+                    `;
+                } else {
+                    // SI ES FUTURO
+                    botonesHTML = `
+                        <a href="whatsapp://send?phone=${turno.telefono}&text=Hola%20${turno.nombre}!%20Te%20escribimos%20del%20consultorio%20para%20recordarte%20tu%20turno%20de%20${turno.tratamiento}%20el%20día%20${turno.fecha}%20a%20las%20${turno.hora}%20hs.%20¡Te%20esperamos!" 
+                           class="ios-btn-submit" 
+                           style="background: rgba(37, 211, 102, 0.1); color: #25D366; padding: 10px; font-size: 0.9rem; flex-grow: 1; text-align: center; text-decoration: none; display: flex; justify-content: center; align-items: center; gap: 4px;">
+                            <span class="material-symbols-rounded" style="font-size: 18px;">chat</span>
+                            Avisar
+                        </a>
+
+                        <button type="button" onclick="mostrarReprogramar(${turno.id})" class="ios-btn-submit" style="background: rgba(0,122,255,0.1); color: var(--accent-blue); padding: 10px; font-size: 0.9rem; flex-grow: 1;">
+                            Modificar
+                        </button>
+                        
+                        <form action="/eliminar_turno/${turno.id}" style="flex-grow: 1; margin: 0;" onsubmit="return procesarAccionAjax(event, this, '${fechaString}', ${dia}, '¿Seguro que querés cancelar y eliminar este turno?');">
+                            <button type="submit" class="ios-btn-submit" style="background: rgba(255,59,48,0.1); color: #ff3b30; padding: 10px; font-size: 0.9rem; width: 100%;">
+                                Cancelar
+                            </button>
+                        </form>
+                    `;
+                }
+
+                // 3. DIBUJAMOS LA TARJETA
+                return `
+                    <div class="turno-card" style="border-left-color: ${esPasado ? '#8e8e93' : '#34c759'}; margin-bottom: 12px; background: white; opacity: ${esPasado ? '0.75' : '1'};">
+                        <div class="turno-header">
+                            <span class="turno-fecha" style="color: #1c1c1e;">
+                                <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 20px; color:${esPasado ? '#8e8e93' : '#34c759'};">schedule</span>
+                                ${turno.hora}
+                            </span>
+                            <span class="turno-pill" style="background: ${esPasado ? '#e5e5ea' : 'var(--bg-secondary)'}; color: ${esPasado ? '#8e8e93' : 'var(--text-main)'};">${turno.tratamiento}</span>
+                        </div>
+                        <div class="turno-detalle">
+                            <p><strong>Paciente:</strong> ${turno.nombre}</p>
+                            <p><strong>Tel/Cob:</strong> ${turno.telefono} | ${turno.cobertura}</p>
+                        </div>
+                        
+                        <div style="width: 100%;">
+                            <div id="botones-accion-${turno.id}" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee;">
+                                ${botonesHTML}
+                            </div>
+
+                            <form id="form-reprogramar-${turno.id}" action="/reprogramar_turno/${turno.id}" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee; background: #f9f9f9; padding: 12px; border-radius: 12px;" onsubmit="return procesarAccionAjax(event, this, '${fechaString}', ${dia});">
+                                <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: var(--text-main);">Elegir nueva disponibilidad:</p>
+                                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+                                    <input type="date" name="nueva_fecha" id="fecha-repro-${turno.id}" class="ios-input" style="margin-bottom: 0;" value="${turno.fecha}" 
+                                        onchange="actualizarHorasReprogramar(${turno.id})" required>
+                                    
+                                    <select name="nueva_hora" id="hora-repro-${turno.id}" class="ios-input" style="margin-bottom: 0;" required>
+                                        <option value="${turno.hora}">${turno.hora} hs (Actual)</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button type="button" onclick="ocultarReprogramar(${turno.id})" class="ios-btn-submit" style="background: #e5e5ea; color: #1c1c1e; padding: 10px; font-size: 0.9rem; flex-grow: 1;">
+                                        Atrás
+                                    </button>
+                                    <button type="submit" class="ios-btn-submit" style="background: #34c759; color: white; padding: 10px; font-size: 0.9rem; flex-grow: 1;">
+                                        Confirmar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        document.getElementById("modalTurnos").style.display = "flex";
+    }
+
+
+    async function actualizarHorasReprogramar(id) {
+        const fechaInput = document.getElementById(`fecha-repro-${id}`);
+        const horaSelect = document.getElementById(`hora-repro-${id}`);
+        const fechaSeleccionada = fechaInput.value;
+
+        if (!fechaSeleccionada) return;
+
+        horaSelect.innerHTML = '<option value="">Buscando...</option>';
+
+        try {
+            // Buscamos los horarios base y los ocupados
+            const respuestaBase = await fetch('/api/horarios_base');
+            const horariosDoctora = await respuestaBase.json();
+
+            const respuesta = await fetch('/api/disponibilidad/' + fechaSeleccionada);
+            const horasOcupadas = await respuesta.json();
+
+            horaSelect.innerHTML = '<option value="" disabled selected>Nueva hora...</option>';
+            
+            horariosDoctora.forEach(hora => {
+                if (!horasOcupadas.includes(hora)) {
+                    horaSelect.innerHTML += `<option value="${hora}">${hora} hs</option>`;
+                }
+            });
+
+            if (horaSelect.options.length === 1) {
+                horaSelect.innerHTML = '<option value="" disabled>Sin horarios libres</option>';
+            }
+        } catch (e) {
+            console.error("Error:", e);
+        }
+    }
+
+    function mostrarReprogramar(id) {
+        document.getElementById(`botones-accion-${id}`).style.display = "none";
+        document.getElementById(`form-reprogramar-${id}`).style.display = "block";
+        actualizarHorasReprogramar(id);
+    }
+
+    function ocultarReprogramar(id) {
+        document.getElementById(`form-reprogramar-${id}`).style.display = "none";
+        document.getElementById(`botones-accion-${id}`).style.display = "flex";
+    }
+
+    function cerrarModal(event) {
+        if(event.target.id === 'modalTurnos') {
+            document.getElementById("modalTurnos").style.display = "none";
+        }
+    }
+
+    // --- SISTEMA DE NOTIFICACIONES ---
+    if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+
+    function notificarNuevoTurno(nombre, hora) {
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("📌 Nuevo Turno Agendado", {
+                body: `${nombre} reservó para hoy a las ${hora} hs.`,
+            });
+        }
+    }
+    // --- LÓGICA DEL RESUMEN DE HOY ---
+    function mostrarResumenHoy() {
+        // Armamos la fecha de hoy en formato YYYY-MM-DD
+        const hoy = new Date();
+        const año = hoy.getFullYear();
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        const dia = String(hoy.getDate()).padStart(2, '0');
+        const fechaString = `${año}-${mes}-${dia}`;
+
+        // Filtramos y ordenamos los turnos de hoy
+        const turnosHoy = todosLosTurnos.filter(t => t.fecha === fechaString);
+        turnosHoy.sort((a, b) => a.hora.localeCompare(b.hora));
+
+        const contenedor = document.getElementById("contenido-resumen");
+        
+        if (turnosHoy.length === 0) {
+            contenedor.innerHTML = `
+                <div style="text-align:center; padding: 30px 10px;">
+                    <span class="material-symbols-rounded" style="font-size: 48px; color: #34c759; margin-bottom: 10px;">coffee</span>
+                    <p style="font-size: 1.1rem; color: #1c1c1e; font-weight: 600;">¡Día libre!</p>
+                    <p style="color: #8e8e93;">No tenés turnos programados para hoy.</p>
+                </div>`;
+        } else {
+            // Mensaje de saludo dinámico
+            let html = `<p style="font-size: 1.1rem; margin-bottom: 20px; color: #1c1c1e;">Buen día, Doctora. Hoy tenés <strong>${turnosHoy.length}</strong> turno${turnosHoy.length > 1 ? 's' : ''}.</p>`;
+            
+            html += `<div style="background: #f2f2f7; border-radius: 16px; padding: 16px;">`;
+            
+            turnosHoy.forEach(t => {
+                // Preparamos el mensaje para este paciente
+                const mensaje = `Hola ${t.nombre}! Te escribimos del consultorio para recordarte tu turno de ${t.tratamiento} hoy a las ${t.hora} hs. ¡Te esperamos!`;
+                // ACÁ CAMBIAMOS WA.ME POR WEB.WHATSAPP.COM/SEND
+                const urlWhatsApp = `whatsapp://send?phone=${t.telefono}&text=${encodeURIComponent(mensaje)}`;
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e5ea; padding-bottom: 12px; margin-bottom: 12px;">
+                        <div style="flex-grow: 1;">
+                            <span style="font-weight: 700; color: #007aff; font-size: 1.1rem; display: block; margin-bottom: 4px;">${t.hora} hs</span>
+                            <span style="font-weight: 600; color: #1c1c1e;">${t.nombre}</span>
+                            <p style="margin: 0; font-size: 0.85rem; color: #8e8e93;">${t.tratamiento} | OS: ${t.cobertura}</p>
+                        </div>
+                        
+                        <a href="${urlWhatsApp}" style="background: #25D366; color: white; padding: 8px 12px; border-radius: 12px; text-decoration: none; display: flex; align-items: center; gap: 4px; font-weight: 600; font-size: 0.85rem; box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);">
+                            <span class="material-symbols-rounded" style="font-size: 16px;">chat</span>
+                            Avisar
+                        </a>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+            contenedor.innerHTML = html;
+        }
+        
+        document.getElementById("modalResumen").style.display = "flex";
+    }
+
+    function cerrarModalResumen(event) {
+        if(event.target.id === 'modalResumen') {
+            document.getElementById("modalResumen").style.display = "none";
+        }
+    }
+
+    cargarTurnos();
+
+    // --- SISTEMA DE RADAR: ACTUALIZACIÓN CADA 30 SEGUNDOS ---
+    let turnosActuales = null;
+    
+    // El sonido de notificación (un "ding" profesional)
+    const audioNotificacion = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
+    async function chequearTurnosNuevos() {
+        try {
+            const response = await fetch('/api/cantidad_turnos');
+            const data = await response.json();
+            
+            // Si es la primera vez que chequea al abrir la app, solo guardamos el número
+            if (turnosActuales === null) {
+                turnosActuales = data.count;
+                return;
+            }
+            
+            // Si hay un turno nuevo...
+            if (data.count > turnosActuales) {
+                turnosActuales = data.count;
+                
+                // Hacemos sonar el ding
+                audioNotificacion.play().catch(e => console.log("Sonido bloqueado por el navegador hasta hacer clic."));
+                
+                // Esperamos medio segundo y recargamos
+                setTimeout(() => {
+                    alert("🔔 ¡Nuevo turno agendado! Actualizando la lista...");
+                    window.location.reload();
+                }, 500);
+            }
+        } catch (error) {
+            console.error("Error buscando turnos:", error);
+        }
+    }
+    // --- MAGIA AJAX: ENVIAR FORMULARIOS SIN RECARGAR LA PÁGINA ---
+    async function procesarAccionAjax(event, form, fechaString, dia, mensajeConfirmacion = null) {
+        event.preventDefault(); // Esto frena la recarga molesta de la página
+
+        // 1. Validamos la confirmación (si tiene)
+        if (mensajeConfirmacion && !confirm(mensajeConfirmacion)) {
+            return false;
+        }
+
+        // 2. Cambiamos el botón para que el usuario sepa que está cargando
+        const boton = form.querySelector('button[type="submit"]');
+        const textoOriginal = boton.innerText;
+        boton.innerText = "Procesando...";
+        boton.disabled = true;
+
+        try {
+            // 3. Enviamos la orden a Python de forma invisible
+            await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form)
+            });
+
+            // 4. Volvemos a pedir los datos actualizados a la base de datos
+            const respuesta = await fetch('/api/turnos');
+            todosLosTurnos = await respuesta.json();
+            
+            // 5. Redibujamos el calendario de fondo y el modal (para mantenerlo abierto)
+            renderizarCalendario();
+            abrirModal(fechaString, dia);
+
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Hubo un problema de conexión al procesar la solicitud.");
+            boton.innerText = textoOriginal;
+            boton.disabled = false;
+        }
+        return false;
+    }
+
+    // Arrancamos el radar
+    chequearTurnosNuevos();
+    setInterval(chequearTurnosNuevos, 30000); // 30000 milisegundos = 30 segundos
+
+</script>
+{% endblock %}
